@@ -19,9 +19,10 @@ struct OmegaPoint {
     }
 
     OmegaPoint() = default;
-
-    std::string pointAsString() {
-        return "(" + std::to_string(i) + ", " + std::to_string(j) + ", " + std::to_string(k) + ")";
+    
+    OmegaPoint(const OmegaPoint<I, J, K>& point)
+        : i { point.i }, j { point.j }, k { point.k } {
+    
     }
 };
 
@@ -33,10 +34,6 @@ struct CartesianPoint {
         : x { x }, y { y } {
         
     }
-
-    std::string pointAsString() {
-        return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
-    }
 };
 
 class Omega {
@@ -46,9 +43,6 @@ class Omega {
      *
      * Decomposition algorithm can be found on my github (will link later)
      */
-
-    // TODO: Add equality operator overloads
-    // TODO: Add addition/subtraction operator overloads
 
     template <typename I, typename J, typename K>
     double componentSum(const OmegaPoint<I, J, K>& m) {
@@ -229,19 +223,19 @@ class Omega {
     }
 
     void aboveLeft(OmegaPoint<int, int, int>& vec) {
-        while (vec.k != 0 && vec.j != 0 && vec.k != 0) {
+        while (vec.i != 0 && vec.j != 0 && vec.k != 0) {
             --vec.k; ++vec.j;
         }
     }
 
     void belowRight(OmegaPoint<int, int, int>& vec) {
-        while (vec.k != 0 && vec.j != 0 && vec.k != 0) {
+        while (vec.i != 0 && vec.j != 0 && vec.k != 0) {
             --vec.j; ++vec.k;
         }
     }
 
     void belowLeft(OmegaPoint<int, int, int>& vec) {
-        while (vec.k != 0 && vec.j != 0 && vec.k != 0) {
+        while (vec.i != 0 && vec.j != 0 && vec.k != 0) {
             --vec.j; ++vec.i;
         }
     }
@@ -249,12 +243,12 @@ class Omega {
     const std::string placementRelativeToIdentity(const OmegaPoint<int, int, int>& vec) {
         std::string toReturn;
         vec.i > 0 ? toReturn += "R" : toReturn += "L";
-        vec.j < 0 ? toReturn += "A" : "B";
+        vec.j < 0 ? toReturn += "A" : toReturn += "B";
         return toReturn;
     }
 
     std::array<OmegaPoint<int, int, int>, 2> primaryDecomposeAlgorithm(OmegaPoint<int, int, int>& vecFromOrigin) {
-        OmegaPoint<int, int, int> a { vecFromOrigin.i, vecFromOrigin.j, vecFromOrigin.k };
+        OmegaPoint<int, int, int> a { vecFromOrigin };
         const std::string placement { placementRelativeToIdentity(a) };
         if (placement == "RA") aboveRight(a);
         else if (placement == "LA") aboveLeft(a);
@@ -274,12 +268,13 @@ public:
 
     template <typename I, typename J, typename K>
     CartesianPoint omegaToCartesian(const OmegaPoint<I, J, K>& m) {
-        double x { 0.5 * (m.i - m.k ) };
+        double x { 0.5 * std::sqrt(3)*(m.i - m.k ) };
         double y { 0.5 * ( m.i - 2*m.j + m.k) };
 
         return CartesianPoint { x, y };
     }
 
+    // TODO: fix this for edgepoints
     template <typename I, typename J, typename K>
     OmegaPoint<int, int, int> closestMidpoint(const OmegaPoint<I, J, K>& m) {
         OmegaPoint<int, int, int> final { (int)std::ceil(m.i), (int)std::ceil(m.j), (int)std::ceil(m.k) };
@@ -349,7 +344,7 @@ public:
     }
     
     const std::array<OmegaPoint<int, int, int>, 2> decomposeIntVector(const OmegaPoint<int, int, int>& midpoint) {
-        if (componentSum(midpoint) == 0) throw(-1);
+        if (componentSum(midpoint) != 1 && componentSum(midpoint) != -1) throw(-1);
         const OmegaPoint<int, int, int> translation { 0, -1, 0 };
         if (componentSum(midpoint) < 0) {
             auto doubleEdgePoint { vectorSubtraction(midpoint, translation) };
@@ -359,13 +354,12 @@ public:
 
         else {
             // this is so dogshit i wanna throw up
-            auto negPoint { vectorSubtraction(midpoint, translation) };
-            auto doubleEdgePoint { vectorSubtraction(negPoint, translation) };
+            auto doubleEdgePoint { vectorSubtraction(vectorSubtraction(midpoint, translation), translation) };
             OmegaPoint<int, int, int> edgePoint { (int)doubleEdgePoint.i, (int)doubleEdgePoint.j, (int)doubleEdgePoint.k };
             auto firstArray { primaryDecomposeAlgorithm(edgePoint) };
             auto doubleTranslatedB { vectorAddition(firstArray[1], OmegaPoint<int, int, int>{ 0, -1, 0 }) };
             OmegaPoint<int, int, int> translatedB { (int)doubleTranslatedB.i, (int)doubleTranslatedB.j, (int)doubleTranslatedB.k };
-            const static std::array<OmegaPoint<int, int, int>, 2> toReturn { firstArray[0], translatedB };
+            const std::array<OmegaPoint<int, int, int>, 2> toReturn { firstArray[0], translatedB };
             return toReturn;
         }
     }
@@ -383,22 +377,5 @@ public:
     }
 
 };
-
-template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-OmegaPoint<double, double, double> operator+(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
-    Omega cord; // this sucks but its my fault !
-    return cord.vectorAddition(x, y);
-}
-
-template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-OmegaPoint<double, double, double> operator-(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
-    Omega cord;
-    return cord.vectorSubtraction(x, y);
-}
-
-template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-bool operator==(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
-    return x.i != y.i ? false : x.j != y.j ? false : x.k != y.k ? false : true; // most readable code oat
-}
 
 #endif
