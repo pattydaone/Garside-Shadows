@@ -33,24 +33,78 @@ bool operator==(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y
     return x.i != y.i ? false : x.j != y.j ? false : x.k != y.k ? false : true; // most readable code oat
 }
 
+template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
+bool operator!=(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
+    return !(x == y);
+}
+
+
 class A2Tilde {
     Omega cord {};
+    std::string tempword {};
     std::vector<std::string_view> words {};
     std::unordered_map<char, char> generatorRegions {
-        {'s', 'B'},
-        {'t', 'C'},
-        {'u', 'A'}
+        {'B', 's'},
+        {'C', 't'},
+        {'A', 'u'}
     };
 
-    std::string_view negativeVecToWord(const OmegaPoint<int, int, int>& decomposed, const OmegaPoint<int, int, int>& full) {
-        
+    const std::unordered_map<std::string_view, std::array<std::string_view, 2>> pathByRegion {
+        {"1-11", {"BA", "CB"}},
+        {"1-1-1", {"AC", "BA"}},
+        {"11-1", {"CA", "BC"}},
+        {"-11-1", {"AB", "CB"}},
+        {"-111", {"AC", "BA"}},
+        {"-1-11", {"AC", "BC"}}
+    };
+
+    void moveRegionA(OmegaPoint<int, int, int>& point, std::string& word) {
+        --point.j; --point.k;
+        word += generatorRegions['A'];
+        std::swap(generatorRegions['B'], generatorRegions['C']);
+    }
+
+    void moveRegionB(OmegaPoint<int, int, int>& point, std::string& word) {
+        --point.i; --point.k;
+        word += generatorRegions['B'];
+        std::swap(generatorRegions['A'], generatorRegions['C']);
+    }
+
+    void moveRegionC(OmegaPoint<int, int, int>& point, std::string& word) {
+        --point.i; --point.j;
+        word += generatorRegions['C'];
+        std::swap(generatorRegions['A'], generatorRegions['B']);
+    }
+
+    void pathFind(OmegaPoint<int, int, int>& startAt, const std::string_view& path, const OmegaPoint<int, int, int>& endAt, std::string& word) {
+        int pathIndex { 0 };
+        while (startAt != endAt) {
+            switch (path[pathIndex]) {
+                case 'A': moveRegionA(startAt, word);
+                case 'B': moveRegionB(startAt, word);
+                case 'C': moveRegionC(startAt, word);
+            } 
+            pathIndex = !pathIndex;
+        }
     }
 
 public:
-    std::string_view omegaPointToWord(const OmegaPoint<int, int, int>& point) {
+    std::string omegaPointToWord(const OmegaPoint<int, int, int>& point) {
+        std::string word {};
+        OmegaPoint<int, int, int> start { 0, -1, 0 };
+        const std::string_view region { cord.getRegion(point) };
+        const auto& path { pathByRegion.at(region) };
         const auto decomposedVector { cord.decomposeIntVector(point) };
+
+        pathFind(start, path[0], decomposedVector[0], word);
+        pathFind(start, path[1], point, word);
+
+        return word;
     }
+
+    OmegaPoint<int, int, int> wordToOmegaPoint(const std::string_view word) {
     
+    }
 };
 
 int main() {
@@ -95,15 +149,16 @@ int main() {
         std::cout << "Expected output: idk" << '\n';
         std::cout << "Actual output: " << cord.vectorSubtraction(v1, v2) << '\n';
     }
-
+    */
     {
         std::cout << "Decomposition test 1" << '\n';
         const OmegaPoint<int, int, int> point { 2, -5, 2 };
         auto decomposed { cord.decomposeIntVector(point) };
         std::cout << "A: " << decomposed[0] << '\n';
         std::cout << "B: " << decomposed[1] << '\n';
+        std::cout << "Added: " << decomposed[0] + decomposed[1] << '\n';
     }
-
+    /*
     {
         std::cout << "Decomposition test 2" << '\n';
         const OmegaPoint<int, int, int> point { 3, -3, -1 };

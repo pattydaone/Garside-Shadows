@@ -87,12 +87,6 @@ class Omega {
     }
 
     template<typename I, typename J, typename K>
-    std::string getRegion(const OmegaPoint<I, J, K>& s) {
-        double sum { componentSum(s) };
-        return std::to_string(regionSign(s.i, sum)) + std::to_string(regionSign(s.j, sum)) + std::to_string(regionSign(s.k, sum));
-    }
-
-    template<typename I, typename J, typename K>
     char getType(const OmegaPoint<I, J, K>& x) {
         if (typeid(x.i) == typeid(int)) return 'A';
         else if (typeid(x.j) == typeid(int)) return 'B';
@@ -257,14 +251,23 @@ class Omega {
         else throw(-1);
 
         // This sucks but that's my fault
+        // TODO: fix this shit
+        const OmegaPoint<double, double, double> aDouble { vectorAddition(a, OmegaPoint<int, int, int>{ 0, -1, 0 }) };
+        const OmegaPoint<int, int, int> aNew { (int)aDouble.i, (int)aDouble.j, (int)aDouble.k };
         const OmegaPoint<double, double, double> bDouble { vectorSubtraction(vecFromOrigin, a) };
         const OmegaPoint<int, int, int> b { (int)bDouble.i, (int)bDouble.j, (int)bDouble.k };
 
-        std::array<OmegaPoint<int, int, int>, 2> toReturn { a, b };
+        std::array<OmegaPoint<int, int, int>, 2> toReturn { aNew, b };
         return toReturn;
     }
 
 public:
+
+    template<typename I, typename J, typename K>
+    std::string getRegion(const OmegaPoint<I, J, K>& s) {
+        double sum { componentSum(s) };
+        return std::to_string(regionSign(s.i, sum)) + std::to_string(regionSign(s.j, sum)) + std::to_string(regionSign(s.k, sum));
+    }
 
     template <typename I, typename J, typename K>
     CartesianPoint omegaToCartesian(const OmegaPoint<I, J, K>& m) {
@@ -346,6 +349,7 @@ public:
     const std::array<OmegaPoint<int, int, int>, 2> decomposeIntVector(const OmegaPoint<int, int, int>& midpoint) {
         if (componentSum(midpoint) != 1 && componentSum(midpoint) != -1) throw(-1);
         const OmegaPoint<int, int, int> translation { 0, -1, 0 };
+
         if (componentSum(midpoint) < 0) {
             auto doubleEdgePoint { vectorSubtraction(midpoint, translation) };
             OmegaPoint<int, int, int> edgePoint { (int)doubleEdgePoint.i, (int)doubleEdgePoint.j, (int)doubleEdgePoint.k };
