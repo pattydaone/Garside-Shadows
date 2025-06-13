@@ -13,14 +13,14 @@ struct OmegaPoint {
     J j {};
     K k {};
 
-    OmegaPoint(I i, J j, K k) 
+    constexpr OmegaPoint(I i, J j, K k) 
         : i { i }, j { j }, k { k } {
     
     }
 
     OmegaPoint() = default;
     
-    OmegaPoint(const OmegaPoint<I, J, K>& point)
+    constexpr OmegaPoint(const OmegaPoint<I, J, K>& point) 
         : i { point.i }, j { point.j }, k { point.k } {
     
     }
@@ -280,6 +280,8 @@ class Omega {
     }
 
 public:
+
+    constexpr Omega() = default;
 
     template <typename I, typename J, typename K>
     double componentSum(const OmegaPoint<I, J, K>& m) const {

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -6,7 +7,7 @@
 #include "omega.h"
 #include "tests.cpp"
 
-const OmegaPoint<int, int, int> nullPoint { 0, 0, 0 };
+constexpr OmegaPoint<int, int, int> nullPoint { 0, 0, 0 };
 
 /*
 template<typename I, typename J, typename K>
@@ -45,13 +46,8 @@ bool operator!=(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y
 
 class A2Tilde {
     const Omega cord {};
-    std::string tempword {};
-    std::vector<std::string_view> words {};
-    std::unordered_map<char, char> generatorRegions {
-        {'B', 's'},
-        {'C', 't'},
-        {'A', 'u'}
-    };
+    const std::unordered_map<char, char> templateGeneratorRegions;
+    std::unordered_map<char, char> generatorRegions;
 
     const std::unordered_map<std::string_view, std::array<std::string_view, 2>> pathByRegion {
         {"1-11", {"BC", "BA"}},
@@ -62,34 +58,34 @@ class A2Tilde {
         {"-1-11", {"AC", "BC"}}
     };
 
-    void moveRegionA(OmegaPoint<int, int, int>& point, std::string& word) {
+    char moveRegionA(OmegaPoint<int, int, int>& point) {
         if (cord.componentSum(point) > 0) { --point.j; --point.k; }
         else { ++point.j; ++point.k; }
-        word += generatorRegions['A'];
         std::swap(generatorRegions['B'], generatorRegions['C']);
+        return generatorRegions['A'];
     }
 
-    void moveRegionB(OmegaPoint<int, int, int>& point, std::string& word) {
+    char moveRegionB(OmegaPoint<int, int, int>& point) {
         if (cord.componentSum(point) > 0) { --point.i; --point.k; }
         else { ++point.i; ++point.k; }
-        word += generatorRegions['B'];
         std::swap(generatorRegions['A'], generatorRegions['C']);
+        return generatorRegions['B'];
     }
 
-    void moveRegionC(OmegaPoint<int, int, int>& point, std::string& word) {
+    char moveRegionC(OmegaPoint<int, int, int>& point) {
         if (cord.componentSum(point) > 0) { --point.i; --point.j; }
         else { ++point.i; ++point.j; }
-        word += generatorRegions['C'];
         std::swap(generatorRegions['A'], generatorRegions['B']);
+        return generatorRegions['C'];
     }
 
     void pathFind(OmegaPoint<int, int, int>& startAt, const std::string_view& path, const OmegaPoint<int, int, int>& endAt, std::string& word) {
         int pathIndex { 0 };
         while (startAt != endAt) {
             switch (path[pathIndex]) {
-                case 'A': { moveRegionA(startAt, word); break; }
-                case 'B': { moveRegionB(startAt, word); break; }
-                case 'C': { moveRegionC(startAt, word); break; }
+                case 'A': { word += moveRegionA(startAt); break; }
+                case 'B': { word += moveRegionB(startAt); break; }
+                case 'C': { word += moveRegionC(startAt); break; }
             } 
             pathIndex = !pathIndex;
         }
@@ -107,8 +103,27 @@ class A2Tilde {
         }
     }
 
+    void resetGeneratorRegions() {
+        generatorRegions = templateGeneratorRegions;
+    }
+
 public:
+    A2Tilde()
+        : templateGeneratorRegions {{
+                {'B', 's'}, {'C', 't'}, {'A', 'u'}
+        }}, generatorRegions { templateGeneratorRegions } {
+        
+    }
+
+    A2Tilde(const std::unordered_map<char, char>& userDefinedGeneratorRegions) 
+        : templateGeneratorRegions { userDefinedGeneratorRegions }
+        , generatorRegions { userDefinedGeneratorRegions } {
+        
+        }
+
+
     std::string omegaPointToWord(const OmegaPoint<int, int, int>& point) {
+        resetGeneratorRegions();
         std::string word {};
         OmegaPoint<int, int, int> start { 0, -1, 0 };
         const std::string region { cord.getRegion(point) };
@@ -121,32 +136,36 @@ public:
         
             if (region == "11-1") {
                 pathFind(start, "CB", decomposedVector[0], word);
+                return word;
             }
 
             else if (region == "-111") {
                 pathFind(start, "AB", decomposedVector[0], word);
+                return word;
             }
 
             else if (region == "1-11") {
                 pathFind(start, determinePath(decomposedVector[0]), decomposedVector[0], word);
+                return word;
             }
         }
 
-        else {
-            pathFind(start, path[0], decomposedVector[0] , word);
-            pathFind(start, path[1], point, word);
-        }
+        pathFind(start, path[0], decomposedVector[0], word);
+        pathFind(start, path[1], point, word);
+
 
         return word;
     }
 
     OmegaPoint<int, int, int> wordToOmegaPoint(const std::string_view word) {
+        resetGeneratorRegions();
         OmegaPoint<int, int, int> point { 0, -1, 0 };
         for (auto i : word) {
-            switch (i) {
-                case 's': {}
-                case 't': {}
-                case 'u': {}
+            auto it = std::find_if(generatorRegions.begin(), generatorRegions.end(), [&i](auto&& it) -> bool { return it.second == i; });
+            switch (it -> first) {
+                case 'A': { moveRegionA(point); break; }
+                case 'B': { moveRegionB(point); break; }
+                case 'C': { moveRegionC(point); break; }
             }
         }
         return point;
@@ -159,17 +178,29 @@ void A2TildeTests() {
     for (auto i : comprehensiveTestingPointsArray) {
         std::cout << "Finding word associated with point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
         std::string word { group.omegaPointToWord(i) };
-        std::cout << "Word: " << word << '\n' << '\n';
+        std::cout << "Word: " << word << '\n';
+        std::cout << "Finding point associated with word " << word << '\n';
+        auto point { group.wordToOmegaPoint(word) };
+        std::cout << "Point: " << point << '\n' << (point == i) << '\n' << '\n';
     }
+
+    std::cout << "Testing word 'stustsu': " << group.wordToOmegaPoint("stustsu") << '\n' << '\n';
     
 }
 
 void A2TildeProblemPoints() {
     A2Tilde group {};
-    OmegaPoint<int, int, int> problemPoint { 3, -4, 0 };
-    std::cout << "Finding word associated with point " << problemPoint << "; " << (testingCord.componentSum(problemPoint) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(problemPoint) << '\n';
-    std::string word { group.omegaPointToWord(problemPoint) };
-    std::cout << "Word: " << word << '\n' << '\n';
+    std::array<OmegaPoint<int, int, int>, 4> problemPoints {
+        {
+            {-2, -1, 2}, {-1, 0, 2}, {2, 0, -1}, {2, -1, -2}
+        }
+    };
+
+    for (auto i : problemPoints) {
+        std::cout << "Finding word associated with point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
+        std::string word { group.omegaPointToWord(i) };
+        std::cout << "Word: " << word << '\n' << '\n';
+    }
 }
 
 int main() {
