@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <cmath>
 #include "omega.h"
 #include "tests.cpp"
 
@@ -169,6 +170,42 @@ public:
             }
         }
         return point;
+    }
+};
+
+class ShadowGenerator {
+    const double criticalAngle { 120 };
+    const Omega cord;
+    const OmegaPoint<int, int, int> identity { 0, -1, 0 };
+    A2Tilde group {};
+    std::vector<std::string_view> shadowAsWords;
+    std::vector<OmegaPoint<int, int, int>> shadowAsPoints{{
+            { 0, -1, 0 }, { 1, -1, 1 }, { 0, 0, 1 }, { 1, 0, 0 }
+    }};
+    std::vector<OmegaPoint<int, int, int>> toJoin {{
+            { 1, -1, 1}, { 0, 0, 1 }, { 1, 0, 0 }
+    }};
+    std::vector<OmegaPoint<int, int, int>> toReflect;
+
+    bool checkAngle(const OmegaPoint<int, int, int>& focusPoint, const OmegaPoint<int, int, int>& otherPoint) {
+        double dotProduct { cord.dotProduct(focusPoint, otherPoint) };
+        double angle { std::acos(dotProduct/(cord.magnitude(focusPoint) * cord.magnitude(otherPoint))) };
+        return angle > criticalAngle ? false : true;
+    }
+
+    void joinOperation() {
+        auto focusPoint { toJoin.back() };
+        toJoin.pop_back();
+        for (auto i : toJoin) {
+            if (checkAngle(focusPoint, i)) continue;
+        }
+    }
+
+    void reflection() {
+        auto focusPoint { toReflect.back() };
+        toReflect.pop_back();
+        std::string_view region { cord.getRegion(focusPoint) };
+        
     }
 };
 

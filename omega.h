@@ -416,6 +416,12 @@ public:
         return xCart.x*yCart.x + xCart.y*yCart.y;
     }
 
+    template<typename I, typename J, typename K>
+    double magnitude(const OmegaPoint<I, J, K>& point) const {
+        const CartesianPoint cart { omegaToCartesian(point) };
+        return std::hypot(cart.x, cart.y);
+    }
+
 };
 
 
