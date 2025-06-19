@@ -9,7 +9,10 @@
 #include "tests.cpp"
 
 constexpr OmegaPoint<int, int, int> nullPoint { 0, 0, 0 };
+constexpr double pi_v { 3.1415 };
 
+using OmegaInt = OmegaPoint<int, int, int>;
+using DecompArray = std::array<OmegaInt, 2>;
 /*
 template<typename I, typename J, typename K>
 std::ostream& operator<<(std::ostream& out, const OmegaPoint<I, J, K>& point) {
@@ -59,29 +62,28 @@ class A2Tilde {
         {"-1-11", {"AC", "BC"}}
     };
 
-    char moveRegionA(OmegaPoint<int, int, int>& point) {
+    char moveRegionA(OmegaInt& point) {
         if (cord.componentSum(point) > 0) { --point.j; --point.k; }
         else { ++point.j; ++point.k; }
         std::swap(generatorRegions['B'], generatorRegions['C']);
         return generatorRegions['A'];
     }
 
-    char moveRegionB(OmegaPoint<int, int, int>& point) {
+    char moveRegionB(OmegaInt& point) {
         if (cord.componentSum(point) > 0) { --point.i; --point.k; }
         else { ++point.i; ++point.k; }
         std::swap(generatorRegions['A'], generatorRegions['C']);
         return generatorRegions['B'];
     }
 
-    char moveRegionC(OmegaPoint<int, int, int>& point) {
+    char moveRegionC(OmegaInt& point) {
         if (cord.componentSum(point) > 0) { --point.i; --point.j; }
         else { ++point.i; ++point.j; }
         std::swap(generatorRegions['A'], generatorRegions['B']);
         return generatorRegions['C'];
     }
 
-    void pathFind(OmegaPoint<int, int, int>& startAt, const std::string_view& path, const OmegaPoint<int, int, int>& endAt, std::string& word) {
-        int pathIndex { 0 };
+    void pathFind(OmegaInt& startAt, const std::string_view& path, const OmegaInt& endAt, std::string& word) { int pathIndex { 0 };
         while (startAt != endAt) {
             switch (path[pathIndex]) {
                 case 'A': { word += moveRegionA(startAt); break; }
@@ -92,14 +94,14 @@ class A2Tilde {
         }
     }
 
-    std::string determinePath(const OmegaPoint<int, int, int>& point) {
+    std::string determinePath(const OmegaInt& point) {
         if (cord.componentSum(point) > 0) {
-            if ((point + OmegaPoint<int, int, int>{-1, 1, -1}).k == 0) return "BA";
+            if ((point + OmegaInt{-1, 1, -1}).k == 0) return "BA";
             else return "BC";
         }
 
         else {
-            if ((point + OmegaPoint<int, int, int>{0, 1, 0}).k == 0) return "BA";
+            if ((point + OmegaInt{0, 1, 0}).k == 0) return "BA";
             else return "BC";
         }
     }
@@ -123,14 +125,14 @@ public:
         }
 
 
-    std::string omegaPointToWord(const OmegaPoint<int, int, int>& point) {
+    std::string omegaPointToWord(const OmegaInt& point) {
         resetGeneratorRegions();
         std::string word {};
-        OmegaPoint<int, int, int> start { 0, -1, 0 };
+        OmegaInt start { 0, -1, 0 };
         const std::string region { cord.getRegion(point) };
         const auto& path { pathByRegion.at(region) };
         auto decomposedVector { cord.decomposeIntVector(point) };
-        decomposedVector[0] = decomposedVector[0] + OmegaPoint<int, int, int> {0, -1, 0};
+        decomposedVector[0] = decomposedVector[0] + OmegaInt {0, -1, 0};
 
         // More hacky fixing because edgecases are so fun!!!!!!!!!!!!!!!!!!!!!
         if (decomposedVector[1] == nullPoint) {
@@ -158,9 +160,9 @@ public:
         return word;
     }
 
-    OmegaPoint<int, int, int> wordToOmegaPoint(const std::string_view word) {
+    OmegaInt wordToOmegaPoint(const std::string_view word) {
         resetGeneratorRegions();
-        OmegaPoint<int, int, int> point { 0, -1, 0 };
+        OmegaInt point { 0, -1, 0 };
         for (auto i : word) {
             auto it = std::find_if(generatorRegions.begin(), generatorRegions.end(), [&i](auto&& it) -> bool { return it.second == i; });
             switch (it -> first) {
@@ -174,39 +176,113 @@ public:
 };
 
 class ShadowGenerator {
-    const double criticalAngle { 120 };
+    const double criticalAngle { 2.0 * pi_v / 3.0 };
     const Omega cord;
-    const OmegaPoint<int, int, int> identity { 0, -1, 0 };
+    const OmegaInt identity { 0, -1, 0 };
     A2Tilde group {};
     std::vector<std::string_view> shadowAsWords;
-    std::vector<OmegaPoint<int, int, int>> shadowAsPoints{{
+    std::vector<OmegaInt> shadowAsPoints{{
             { 0, -1, 0 }, { 1, -1, 1 }, { 0, 0, 1 }, { 1, 0, 0 }
     }};
-    std::vector<OmegaPoint<int, int, int>> toJoin {{
+    std::vector<OmegaInt> toJoin {{
             { 1, -1, 1}, { 0, 0, 1 }, { 1, 0, 0 }
     }};
-    std::vector<OmegaPoint<int, int, int>> toReflect;
+    std::vector<OmegaInt> toReflect;
 
-    bool checkAngle(const OmegaPoint<int, int, int>& focusPoint, const OmegaPoint<int, int, int>& otherPoint) {
+    std::unordered_map<std::string_view, std::string_view> reflectionsByRegion;
+
+    bool angleGtCritical(const OmegaInt& focusPoint, const OmegaInt& otherPoint) {
         double dotProduct { cord.dotProduct(focusPoint, otherPoint) };
         double angle { std::acos(dotProduct/(cord.magnitude(focusPoint) * cord.magnitude(otherPoint))) };
-        return angle > criticalAngle ? false : true;
+        return angle > criticalAngle ? true : false;
     }
 
-    void joinOperation() {
-        auto focusPoint { toJoin.back() };
-        toJoin.pop_back();
-        for (auto i : toJoin) {
-            if (checkAngle(focusPoint, i)) continue;
+    bool joinCompatibleWithNull(const OmegaInt& pointWithNull, const std::string& pointWithNullRegion, const std::string& otherPointRegion) {
+        if (pointWithNullRegion == "-1-11") {
+            return otherPointRegion == "-111";
+        }
+
+        else if (pointWithNullRegion == "1-1-1") {
+            return otherPointRegion == "11-1";
+        }
+
+        else if (pointWithNullRegion == "-111" || pointWithNullRegion == "11-1") {
+            return otherPointRegion == "-11-1";
+        }
+
+        // We want to find the orientation of the point with respect to the identity, so we can check by finding the x cord in cartesian and checking pos/neg.
+        // Since the conversion for the x cord is sqrt(3)/2 (i - k), we can throw out the constant as it doesnt say anything about sign, so 
+        // i - k > 0 <=> i > k => right; i - k < 0 <=> i < k => left
+        if (pointWithNull.i < pointWithNull.k) {
+            return otherPointRegion == "1-1-1";
+        }
+
+        else if (pointWithNull.i > pointWithNull.k) {
+            return otherPointRegion == "-1-11";
+        }
+
+        // If this executes, it means cartesian x == 0, so the point must be (0, -1, 0), which can join with either of the following regions
+        else {
+            return otherPointRegion == "-1-11" || otherPointRegion == "1-1-1";
         }
     }
 
+    bool joinCompatible(const OmegaInt& x, const DecompArray& xDecomp, const OmegaInt& y, const DecompArray& yDecomp) {
+        std::string xRegion { cord.getRegion(x) };
+        std::string yRegion { cord.getRegion(y) };
+        if (xRegion == yRegion) return true;
+
+        if (xDecomp[1] == nullPoint) {
+            if (joinCompatibleWithNull(xDecomp[0], xRegion, yRegion)) return true;
+        }
+        
+        if (yDecomp[1] == nullPoint) {
+            if (joinCompatibleWithNull(yDecomp[0], yRegion, xRegion)) return true;
+        }
+
+        return false;
+    }
+public:
+    void joinOperation() {
+        auto focusPoint { toJoin.back() };
+        toJoin.pop_back();
+        auto decomposedFocus { cord.decomposeIntVector(focusPoint) };
+        for (auto i : toJoin) {
+            // if (angleGtCritical(focusPoint, i)) continue;
+
+            auto decomposedI { cord.decomposeIntVector(i) };
+            if (!joinCompatible(focusPoint, decomposedFocus, i, decomposedI)) continue;
+
+            auto possibleJoinPoint { decomposedFocus[0] + decomposedI[0] };
+            std::cout << possibleJoinPoint << '\n';
+        }
+    }
+private:
     void reflection() {
         auto focusPoint { toReflect.back() };
         toReflect.pop_back();
-        std::string_view region { cord.getRegion(focusPoint) };
+        std::string region { cord.getRegion(focusPoint) };
         
     }
+
+public:
+    ShadowGenerator()
+        : reflectionsByRegion { {"1-11", "s"}, {"-11-1", "ut"}, {"-111", "u"},
+                                {"11-1", "t"}, {"-1-11", "su"}, {"1-1-1", "st"} } {
+        
+        }
+
+    ShadowGenerator(const std::unordered_map<char, char>& userDefinedGeneratorRegions) 
+        : group { userDefinedGeneratorRegions }
+        , reflectionsByRegion { {"1-11", std::to_string(userDefinedGeneratorRegions.at('B'))}, 
+                                {"-11-1", std::to_string(userDefinedGeneratorRegions.at('C')) + userDefinedGeneratorRegions.at('A')},
+                                {"-111", std::to_string(userDefinedGeneratorRegions.at('A'))},
+                                {"11-1", std::to_string(userDefinedGeneratorRegions.at('C'))},
+                                {"-1-11", std::to_string(userDefinedGeneratorRegions.at('B')) + userDefinedGeneratorRegions.at('A')},
+                                {"1-1-1", std::to_string(userDefinedGeneratorRegions.at('B')) + userDefinedGeneratorRegions.at('C')} } {
+        
+    }
+
 };
 
 void A2TildeTests() {
@@ -227,11 +303,9 @@ void A2TildeTests() {
 
 void A2TildeProblemPoints() {
     A2Tilde group {};
-    std::array<OmegaPoint<int, int, int>, 4> problemPoints {
-        {
+    std::array<OmegaInt, 4> problemPoints {{
             {-2, -1, 2}, {-1, 0, 2}, {2, 0, -1}, {2, -1, -2}
-        }
-    };
+    }};
 
     for (auto i : problemPoints) {
         std::cout << "Finding word associated with point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
@@ -241,6 +315,7 @@ void A2TildeProblemPoints() {
 }
 
 int main() {
-    A2TildeTests();
+    ShadowGenerator shadow {};
+    shadow.joinOperation();
     return 0;
 }

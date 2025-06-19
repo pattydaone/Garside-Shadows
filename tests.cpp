@@ -89,8 +89,8 @@ void vectorAdditionTests() {
 }
 
 template<typename I1, typename I2, typename J1, typename J2, typename K1, typename K2>
-void manualVectorAdditionTest(const OmegaPoint<I1, J1, K1>& v1, const OmegaPoint<I2, J2, K2>& v2) {
-    std::cout << "Evaluating " << v1 << " + " << v2 << '\n';
+void manualVectorAdditionTest(const OmegaPoint<I1, J1, K1>& v1, const OmegaPoint<I2, J2, K2>& v2, const std::string& message) {
+    std::cout << "Evaluating " << v1 << " + " << v2 << "(" << message << ")" << '\n';
     std::cout << v1 + v2 << '\n';
 }
 

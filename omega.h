@@ -66,8 +66,10 @@ class Omega {
      * Definitions and addition/subtraction algorithms are pulled from the following article: 
      * https://pmc.ncbi.nlm.nih.gov/articles/PMC8004019/#sec3-entropy-23-00373
      *
-     * Decomposition algorithm can be found on my github (will link later)
+     * Decomposition algorithm can be found on my github TODO: Add link to this
      */
+
+    const OmegaPoint<int, int, int> translation { 0, -1, 0 };
 
     int sign(double x) const {
         if (x < 0) return -1;
@@ -227,6 +229,7 @@ class Omega {
         else if (xtype == 'B') return sameTypeB(region, rsum, signedI, signedK);
         else if (xtype == 'C') return sameTypeC(region, rsum, signedI, signedJ);
 
+        // This can happen *if and only if* none of the data members in x are integers
         return 'a';
     }
 
@@ -272,7 +275,6 @@ class Omega {
 
         // This sucks but that's my fault
         // TODO: fix this shit
-        // a = vectorAddition(a, OmegaPoint<int, int, int>{ 0, -1, 0 });
         const OmegaPoint<int, int, int> b { vectorSubtraction(vecFromOrigin, a) };
 
         std::array<OmegaPoint<int, int, int>, 2> toReturn { a, b };
@@ -330,7 +332,7 @@ public:
                     OmegaPoint<double, double, double> r { i, j, k };
                     double sum { componentSum(r) };
                     // The paper states this step as being ">" and "<". I suspect this is wrong, as I am getting exactly = 2,
-                    // and exactly = 2 is not within out bounds. I believe these should be ">=" and "<=" respectively
+                    // and exactly = 2 is not within our bounds. I believe these should be ">=" and "<=" respectively
                     if (sum >= 2) { --r.i; --r.j; --r.k; }
                     else if (sum <= -2) { ++r.i; ++r.j; ++r.k; }
                     return r;
@@ -373,7 +375,6 @@ public:
     
     const std::array<OmegaPoint<int, int, int>, 2> decomposeIntVector(const OmegaPoint<int, int, int>& midpoint) const {
         if (componentSum(midpoint) != 1 && componentSum(midpoint) != -1) throw(-1);
-        const OmegaPoint<int, int, int> translation { 0, -1, 0 };
 
         if (componentSum(midpoint) < 0) {
             OmegaPoint<int, int, int> edgePoint { vectorSubtraction(midpoint, translation) };
@@ -381,6 +382,12 @@ public:
         }
 
         else {
+            // GUESS WHAT ANOTHER FREAKING EDGECASE EXCEPTION YIPPEEEEEEEE I LOVE THIS SO MUCH
+            if (midpoint == OmegaPoint<int, int, int>{ 1, -1, 1 }) {
+                return {{
+                        { 0, -1, 0 }, { 0, 0, 0 }
+                }};
+            }
 
             // this is so dogshit i wanna throw up
             OmegaPoint<int, int, int> midpointBelow { vectorSubtraction(midpoint, translation) };
@@ -388,14 +395,14 @@ public:
 
             // HARDCODED EDGECASE BECAUSE THIS SHIT MAKES ME WANNA DIE
             if (midpoint.j == 0) {
-                return {
-                    {midpointBelow, {0, 0, 0}}
-                };
+                return {{
+                    midpointBelow, {0, 0, 0}
+                }};
             }
 
             auto firstArray { primaryDecomposeAlgorithm(edgePoint) };
 
-            // MORE HARDCODED EDGECASE BECAUSE I WANNA DIE
+            // MORE HARDCODED EDGECASE! I WANNA DIE!!!!!!
             if (firstArray[1] == OmegaPoint<int, int, int> { 0, 0, 0 } && firstArray[0].j != 0) {
                 firstArray[0] = vectorAddition(firstArray[0], translation);
                 return firstArray;
