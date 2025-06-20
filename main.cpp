@@ -4,12 +4,10 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <cmath>
 #include "omega.h"
 #include "tests.cpp"
 
 constexpr OmegaPoint<int, int, int> nullPoint { 0, 0, 0 };
-constexpr double pi_v { 3.1415 };
 
 using OmegaInt = OmegaPoint<int, int, int>;
 using DecompArray = std::array<OmegaInt, 2>;
@@ -176,7 +174,6 @@ public:
 };
 
 class ShadowGenerator {
-    const double criticalAngle { 2.0 * pi_v / 3.0 };
     const Omega cord;
     const OmegaInt identity { 0, -1, 0 };
     A2Tilde group {};
@@ -191,73 +188,88 @@ class ShadowGenerator {
 
     std::unordered_map<std::string_view, std::string_view> reflectionsByRegion;
 
-    bool angleGtCritical(const OmegaInt& focusPoint, const OmegaInt& otherPoint) {
-        double dotProduct { cord.dotProduct(focusPoint, otherPoint) };
-        double angle { std::acos(dotProduct/(cord.magnitude(focusPoint) * cord.magnitude(otherPoint))) };
-        return angle > criticalAngle ? true : false;
+    std::array<std::string, 3> focusPointAccessRegions {};
+    std::array<std::string, 3> iAccessRegions {};
+
+    void getAccessibleRegions(std::array<std::string, 3>& arr, const DecompArray& decomp, const OmegaInt& point) {
+        std::string pointRegion { cord.getRegion(point) };
+        arr[0] = pointRegion;
+        arr[2] = "";
+        if (decomp[0] != nullPoint && decomp[1] != nullPoint) {
+            arr[1] = "";
+            return;
+        }
+
+        if (pointRegion == "1-1-1") {
+            arr[1] = "11-1";
+            if (point == OmegaInt{1, 0, 0}) arr[2] = "-11-1";
+            return;
+        }
+
+        if (pointRegion == "11-1") {
+            arr[1] = "-11-1";
+            return;
+        }
+
+        if (pointRegion == "-111") {
+            arr[1] = "-11-1";
+            return;
+        }
+
+        if (pointRegion == "-1-11") {
+            arr[1] = "-111";
+            if (point == OmegaInt{0, 0, 1}) arr[2] = "-11-1";
+            return;
+        }
+
+        if (pointRegion == "1-11") {
+            
+            // We want to find the orientation of the point with respect to the identity, so we can check by finding the x cord in cartesian and checking pos/neg.
+            // Since the conversion for the x cord is sqrt(3)/2 (i - k), we can throw out the constant as it doesnt say anything about sign, so 
+            // i - k > 0 <=> i > k => right; i - k < 0 <=> i < k => left
+            if (point.i < point.k) {
+                arr[1] = "1-1-1";
+                return;
+            }
+
+            else if (point.i > point.k) {
+                arr[1] = "-1-11";
+                return;
+            }
+
+            // If this executes, it means cartesian x == 0, so the point must be (0, -1, 0), which can join with either of the following regions
+            else {
+                arr[1] = "-1-11";
+                arr[2] = "1-1-1";
+                return;
+            }
+        }
     }
 
-    bool joinCompatibleWithNull(const OmegaInt& pointWithNull, const std::string& pointWithNullRegion, const std::string& otherPointRegion) {
-        if (pointWithNullRegion == "-1-11") {
-            return otherPointRegion == "-111";
+    bool joinCompatible(const std::array<std::string, 3>& xArray, const std::array<std::string, 3>& yArray) {
+        for (auto i : xArray) {
+            if (i == "") continue;
+            if (std::find(yArray.begin(), yArray.end(), i) != yArray.end()) return true;
         }
-
-        else if (pointWithNullRegion == "1-1-1") {
-            return otherPointRegion == "11-1";
-        }
-
-        else if (pointWithNullRegion == "-111" || pointWithNullRegion == "11-1") {
-            return otherPointRegion == "-11-1";
-        }
-
-        // We want to find the orientation of the point with respect to the identity, so we can check by finding the x cord in cartesian and checking pos/neg.
-        // Since the conversion for the x cord is sqrt(3)/2 (i - k), we can throw out the constant as it doesnt say anything about sign, so 
-        // i - k > 0 <=> i > k => right; i - k < 0 <=> i < k => left
-        if (pointWithNull.i < pointWithNull.k) {
-            return otherPointRegion == "1-1-1";
-        }
-
-        else if (pointWithNull.i > pointWithNull.k) {
-            return otherPointRegion == "-1-11";
-        }
-
-        // If this executes, it means cartesian x == 0, so the point must be (0, -1, 0), which can join with either of the following regions
-        else {
-            return otherPointRegion == "-1-11" || otherPointRegion == "1-1-1";
-        }
-    }
-
-    bool joinCompatible(const OmegaInt& x, const DecompArray& xDecomp, const OmegaInt& y, const DecompArray& yDecomp) {
-        std::string xRegion { cord.getRegion(x) };
-        std::string yRegion { cord.getRegion(y) };
-        if (xRegion == yRegion) return true;
-
-        if (xDecomp[1] == nullPoint) {
-            if (joinCompatibleWithNull(xDecomp[0], xRegion, yRegion)) return true;
-        }
-        
-        if (yDecomp[1] == nullPoint) {
-            if (joinCompatibleWithNull(yDecomp[0], yRegion, xRegion)) return true;
-        }
-
         return false;
     }
-public:
+
     void joinOperation() {
         auto focusPoint { toJoin.back() };
         toJoin.pop_back();
         auto decomposedFocus { cord.decomposeIntVector(focusPoint) };
+        getAccessibleRegions(focusPointAccessRegions, decomposedFocus, focusPoint);
         for (auto i : toJoin) {
-            // if (angleGtCritical(focusPoint, i)) continue;
-
             auto decomposedI { cord.decomposeIntVector(i) };
-            if (!joinCompatible(focusPoint, decomposedFocus, i, decomposedI)) continue;
+            getAccessibleRegions(iAccessRegions, decomposedI, i);
+
+            if (!joinCompatible(focusPointAccessRegions, iAccessRegions)) continue;
 
             auto possibleJoinPoint { decomposedFocus[0] + decomposedI[0] };
             std::cout << possibleJoinPoint << '\n';
         }
     }
-private:
+
     void reflection() {
         auto focusPoint { toReflect.back() };
         toReflect.pop_back();
@@ -316,6 +328,5 @@ void A2TildeProblemPoints() {
 
 int main() {
     ShadowGenerator shadow {};
-    shadow.joinOperation();
     return 0;
 }
