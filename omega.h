@@ -6,6 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <array>
+#include <iostream>
 
 template <typename I, typename J, typename K>
 struct OmegaPoint {
@@ -41,6 +42,13 @@ struct OmegaPoint {
     }
 };
 
+template<typename I, typename J, typename K>
+inline std::ostream& operator<<(std::ostream& out, const OmegaPoint<I, J, K>& point) {
+    out << "(" << std::to_string(point.i) << ", " << std::to_string(point.j) << ", " << std::to_string(point.k) << ")";
+    return out;
+}
+
+
 template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
 inline bool operator==(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
     return x.i != y.i ? false : x.j != y.j ? false : x.k != y.k ? false : true; // most readable code oat
@@ -60,6 +68,11 @@ struct CartesianPoint {
         
     }
 };
+
+inline std::ostream& operator<<(std::ostream& out, const CartesianPoint& point) {
+    out << "(" << std::to_string(point.x) << ", " << std::to_string(point.y) << ")";
+    return out;
+}
 
 class Omega {
     /*
@@ -431,5 +444,16 @@ public:
 
 };
 
+template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
+inline OmegaPoint<double, double, double> operator+(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
+    Omega cord; // this sucks but its my fault !
+    return cord.vectorAddition(x, y);
+}
+
+template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
+inline OmegaPoint<double, double, double> operator-(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
+    Omega cord;
+    return cord.vectorSubtraction(x, y);
+}
 
 #endif

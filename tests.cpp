@@ -1,7 +1,8 @@
 #include <iostream>
+#include "constants.h"
 #include "omega.h"
-
-constexpr Omega testingCord;
+#include "groups.h"
+#include "shadowGenerators.h"
 
 const std::array<OmegaPoint<int, int, int>, 36> comprehensiveTestingPointsArray {
     {
@@ -15,29 +16,6 @@ const std::array<OmegaPoint<int, int, int>, 36> comprehensiveTestingPointsArray 
         {3, -3, -1}
     }
 };
-
-template<typename I, typename J, typename K>
-std::ostream& operator<<(std::ostream& out, const OmegaPoint<I, J, K>& point) {
-    out << "(" << std::to_string(point.i) << ", " << std::to_string(point.j) << ", " << std::to_string(point.k) << ")";
-    return out;
-}
-
-std::ostream& operator<<(std::ostream& out, const CartesianPoint& point) {
-    out << "(" << std::to_string(point.x) << ", " << std::to_string(point.y) << ")";
-    return out;
-}
-
-template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-OmegaPoint<double, double, double> operator+(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
-    Omega cord; // this sucks but its my fault !
-    return cord.vectorAddition(x, y);
-}
-
-template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-OmegaPoint<double, double, double> operator-(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
-    Omega cord;
-    return cord.vectorSubtraction(x, y);
-}
 
 void midpointTests() {
     OmegaPoint<int, double, double> m { 1, -0.2, -0.4 };
@@ -118,4 +96,33 @@ void manualDecompositionTest(const OmegaPoint<int, int, int>& point) {
     std::cout << "A: " << decomposed[0] << '\n';
     std::cout << "B: " << decomposed[1] << '\n';
     std::cout << "Added: " << decomposed[0] + decomposed[1] << '\n';
+}
+
+void A2TildeTests() {
+    A2Tilde group {};
+    
+    for (auto i : comprehensiveTestingPointsArray) {
+        std::cout << "Finding word associated with point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
+        std::string word { group.omegaPointToWord(i) };
+        std::cout << "Word: " << word << '\n';
+        std::cout << "Finding point associated with word " << word << '\n';
+        auto point { group.wordToOmegaPoint(word) };
+        std::cout << "Point: " << point << '\n' << (point == i) << '\n' << '\n';
+    }
+
+    std::cout << "Testing word 'stustsu': " << group.wordToOmegaPoint("stustsu") << '\n' << '\n';
+    
+}
+
+void A2TildeProblemPoints() {
+    A2Tilde group {};
+    std::array<OmegaInt, 4> problemPoints {{
+            {-2, -1, 2}, {-1, 0, 2}, {2, 0, -1}, {2, -1, -2}
+    }};
+
+    for (auto i : problemPoints) {
+        std::cout << "Finding word associated with point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
+        std::string word { group.omegaPointToWord(i) };
+        std::cout << "Word: " << word << '\n' << '\n';
+    }
 }
