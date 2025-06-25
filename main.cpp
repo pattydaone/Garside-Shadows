@@ -18,7 +18,6 @@ using DecompArray = std::array<OmegaInt, 2>;
 
 
 int main() {
-    ShadowGenerator shadow {};
-    shadow.joinOperation();
+    joinTests();
     return 0;
 }

@@ -4,8 +4,10 @@
 #include "groups.h"
 #include "shadowGenerators.h"
 
-const std::array<OmegaPoint<int, int, int>, 36> comprehensiveTestingPointsArray {
-    {
+using OmegaInt = OmegaPoint<int, int, int>;
+using DecompArray = std::array<OmegaInt, 2>;
+
+const std::array<OmegaInt, 36> comprehensiveTestingPointsArray {{
         {4, -3, 0}, {3, -4, 0}, {3, -3, 1}, {2, -4, 1}, {2, -3, 2},
         {1, -4, 2}, {1, -3, 3}, {0, -4, 3}, {0, -3, 4}, {-1, -3, 3},
         {0, -2, 3}, {-1, -2, 2}, {-1, -1, 3}, {-2, -1, 2}, {-1, 0, 2},
@@ -14,8 +16,18 @@ const std::array<OmegaPoint<int, int, int>, 36> comprehensiveTestingPointsArray 
         {0, 2, -3}, {1, 2, -2}, {1, 1, -3}, {2, 1, -2}, {1, 0, -2},
         {2, 0, -1}, {2, -1, -2}, {3, -1, -1}, {2, -2, -1}, {3, -2, 0},
         {3, -3, -1}
-    }
-};
+}};
+
+std::vector<OmegaInt> comprehensiveTestingPointsVector {{
+        {4, -3, 0}, {3, -4, 0}, {3, -3, 1}, {2, -4, 1}, {2, -3, 2},
+        {1, -4, 2}, {1, -3, 3}, {0, -4, 3}, {0, -3, 4}, {-1, -3, 3},
+        {0, -2, 3}, {-1, -2, 2}, {-1, -1, 3}, {-2, -1, 2}, {-1, 0, 2},
+        {-2, 0, 1}, {-2, 1, 2}, {-3, 1, 1}, {-2, 2, 1}, {-3, 2, 0},
+        {-2, 3, 0}, {-2, 2, -1}, {-1, 3, -1}, {-1, 2, -2}, {0, 3, -2},
+        {0, 2, -3}, {1, 2, -2}, {1, 1, -3}, {2, 1, -2}, {1, 0, -2},
+        {2, 0, -1}, {2, -1, -2}, {3, -1, -1}, {2, -2, -1}, {3, -2, 0},
+        {3, -3, -1}
+}};
 
 void midpointTests() {
     OmegaPoint<int, double, double> m { 1, -0.2, -0.4 };
@@ -59,8 +71,8 @@ void vectorAdditionTests() {
     
     {
         std::cout << "Sample (d)" << '\n';
-        const OmegaPoint<int, int, int> v1 { 3, -4, 0 };
-        const OmegaPoint<int, int, int> v2 { 0, -1, 0 };
+        const OmegaInt v1 { 3, -4, 0 };
+        const OmegaInt v2 { 0, -1, 0 };
         std::cout << "Expected output: idk" << '\n';
         std::cout << "Actual output: " << v1 + v2 << '\n';
     }
@@ -73,8 +85,6 @@ void manualVectorAdditionTest(const OmegaPoint<I1, J1, K1>& v1, const OmegaPoint
 }
 
 void vectorDecompositionTests() {
-    const OmegaPoint<int, int, int> translation { 0, -1, 0 };
-
     for (auto i : comprehensiveTestingPointsArray) {
         std::cout << "Decomposing point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
         auto decomposed { testingCord.decomposeIntVector(i) };
@@ -90,7 +100,7 @@ void vectorDecompositionTests() {
 
 }
 
-void manualDecompositionTest(const OmegaPoint<int, int, int>& point) {
+void manualDecompositionTest(const OmegaInt& point) {
     std::cout << "Decomposing vector " << point << '\n';
     auto decomposed { testingCord.decomposeIntVector(point) };
     std::cout << "A: " << decomposed[0] << '\n';
@@ -106,7 +116,7 @@ void A2TildeTests() {
         std::string word { group.omegaPointToWord(i) };
         std::cout << "Word: " << word << '\n';
         std::cout << "Finding point associated with word " << word << '\n';
-        auto point { group.wordToOmegaPoint(word) };
+        OmegaInt point { group.wordToOmegaPoint(word) };
         std::cout << "Point: " << point << '\n' << (point == i) << '\n' << '\n';
     }
 
@@ -124,5 +134,13 @@ void A2TildeProblemPoints() {
         std::cout << "Finding word associated with point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
         std::string word { group.omegaPointToWord(i) };
         std::cout << "Word: " << word << '\n' << '\n';
+    }
+}
+
+void joinTests() {
+    ShadowGenerator generator;
+    generator.toJoin = comprehensiveTestingPointsVector;
+    while ((generator.toJoin).size() != 0) {
+        generator.joinOperation();
     }
 }

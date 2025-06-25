@@ -68,12 +68,12 @@ class ShadowGenerator {
             // We want to find the orientation of the point with respect to the identity, so we can check by finding the x cord in cartesian and checking pos/neg.
             // Since the conversion for the x cord is sqrt(3)/2 (i - k), we can throw out the constant as it doesnt say anything about sign, so 
             // i - k > 0 <=> i > k => right; i - k < 0 <=> i < k => left
-            if (point.i < point.k) {
+            if (point.i > point.k) {
                 arr[1] = "1-1-1";
                 return;
             }
 
-            else if (point.i > point.k) {
+            else if (point.i < point.k) {
                 arr[1] = "-1-11";
                 return;
             }
@@ -119,7 +119,7 @@ class ShadowGenerator {
         auto firstPossibleY { std::find_if(yArr.begin(), yArr.end(), [this, &firstPossibleX](auto&& y) { return getDirection(firstPossibleX + translation) == getDirection(y + translation); })};
         
         const OmegaInt& secondPossibleX { xArr[1] };
-        auto secondPossibleY { std::find_if_not(yArr.begin(), yArr.end(), [this, &secondPossibleX](auto&& y) { return getDirection(secondPossibleX + translation) == getDirection(y + translation); })};
+        auto secondPossibleY { std::find_if(yArr.begin(), yArr.end(), [this, &secondPossibleX](auto&& y) { return getDirection(secondPossibleX + translation) == getDirection(y + translation); })};
 
         if (firstPossibleY == yArr.end()) {
             return firstPossibleX + max(secondPossibleX, *secondPossibleY);
@@ -131,7 +131,7 @@ class ShadowGenerator {
 
         return max(firstPossibleX, *firstPossibleY) + max(secondPossibleX, *secondPossibleY);
     }
-public:
+
     void joinOperation() {
         auto focusPoint { toJoin.back() };
         toJoin.pop_back();
@@ -144,10 +144,10 @@ public:
             if (!joinCompatible(focusPointAccessRegions, iAccessRegions)) continue;
 
             auto possibleJoinPoint { estimatePoint(decomposedFocus, decomposedI) };
-            std::cout << possibleJoinPoint << '\n';
+            std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint + translation << '\n' << '\n';
         }
     }
-private:
+
     void reflection() {
         auto focusPoint { toReflect.back() };
         toReflect.pop_back();
@@ -156,7 +156,7 @@ private:
     }
 
 public:
-    ShadowGenerator()
+    ShadowGenerator() 
         : reflectionsByRegion { {"1-11", "s"}, {"-11-1", "ut"}, {"-111", "u"},
                                 {"11-1", "t"}, {"-1-11", "su"}, {"1-1-1", "st"} } {
         
@@ -172,6 +172,8 @@ public:
                                 {"1-1-1", std::to_string(userDefinedGeneratorRegions.at('B')) + userDefinedGeneratorRegions.at('C')} } {
         
     }
+
+    friend void joinTests();
 
 };
 
