@@ -18,6 +18,6 @@ using DecompArray = std::array<OmegaInt, 2>;
 
 
 int main() {
-    joinTests();
+    joinTestsProblemPoints();
     return 0;
 }

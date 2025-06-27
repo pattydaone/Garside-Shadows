@@ -115,6 +115,7 @@ class ShadowGenerator {
     }
 
     OmegaInt estimatePoint(const DecompArray& xArr, const DecompArray& yArr) {
+        // TODO: reconsider this entire dogshit
         const OmegaInt& firstPossibleX { xArr[0] };
         auto firstPossibleY { std::find_if(yArr.begin(), yArr.end(), [this, &firstPossibleX](auto&& y) { return getDirection(firstPossibleX + translation) == getDirection(y + translation); })};
         
@@ -175,6 +176,7 @@ public:
 
     friend void joinTests();
 
+    friend void joinTestsProblemPoints();
 };
 
 #endif
