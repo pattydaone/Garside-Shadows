@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include "OmegaPoint.h"
 #include "omega.h"
 #include "constants.h"
 #include "groups.h"
@@ -18,6 +19,6 @@ using DecompArray = std::array<OmegaInt, 2>;
 
 
 int main() {
-    joinTestsProblemPoints();
+    joinTests(); // checked up through (2, -1, -2)
     return 0;
 }

@@ -17,13 +17,13 @@ class A2Tilde {
     const std::unordered_map<char, char> templateGeneratorRegions;
     std::unordered_map<char, char> generatorRegions;
 
-    const std::unordered_map<std::string_view, std::array<std::string_view, 2>> pathByRegion {
-        {"1-11", {"BC", "BA"}},
-        {"1-1-1", {"CA", "BA"}},
-        {"11-1", {"CA", "CB"}},
-        {"-11-1", {"CB", "AB"}},
-        {"-111", {"AC", "AB"}},
-        {"-1-11", {"AC", "BC"}}
+    const std::unordered_map<rgn, std::array<std::string_view, 2>> pathByRegion {
+        {rgn::pmp, {"BC", "BA"}},
+        {rgn::pmm, {"CA", "BA"}},
+        {rgn::ppm, {"CA", "CB"}},
+        {rgn::mpm, {"CB", "AB"}},
+        {rgn::mpp, {"AC", "AB"}},
+        {rgn::mmp, {"AC", "BC"}}
     };
 
     char moveRegionA(OmegaInt& point) {
@@ -93,27 +93,30 @@ public:
         resetGeneratorRegions();
         std::string word {};
         OmegaInt start { 0, -1, 0 };
-        const std::string region { cord.getRegion(point) };
+        const rgn region { cord.getRegion(point) };
         const auto& path { pathByRegion.at(region) };
         auto decomposedVector { cord.decomposeIntVector(point) };
         decomposedVector[0] = decomposedVector[0] + OmegaInt {0, -1, 0};
 
         // More hacky fixing because edgecases are so fun!!!!!!!!!!!!!!!!!!!!!
         if (decomposedVector[1] == nullPoint) {
-        
-            if (region == "11-1") {
-                pathFind(start, "CB", decomposedVector[0], word);
-                return word;
-            }
+            switch (region) {
+                case (rgn::ppm): {
+                    pathFind(start, "CB", decomposedVector[0], word);
+                    return word;
+                }
+                                 
+                case (rgn::mpp): {
+                    pathFind(start, "AB", decomposedVector[0], word);
+                    return word;
+                }
 
-            else if (region == "-111") {
-                pathFind(start, "AB", decomposedVector[0], word);
-                return word;
-            }
+                case (rgn::pmp): {
+                    pathFind(start, determinePath(decomposedVector[0]), decomposedVector[0], word);
+                    return word;
+                }
 
-            else if (region == "1-11") {
-                pathFind(start, determinePath(decomposedVector[0]), decomposedVector[0], word);
-                return word;
+                default: break;
             }
         }
 

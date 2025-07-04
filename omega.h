@@ -6,73 +6,9 @@
 #include <string>
 #include <algorithm>
 #include <array>
-#include <iostream>
+#include "OmegaPoint.h"
+#include "constants.h"
 
-template <typename I, typename J, typename K>
-struct OmegaPoint {
-    I i {};
-    J j {};
-    K k {};
-
-    constexpr OmegaPoint(I i, J j, K k) 
-        : i { i }, j { j }, k { k } {
-    
-    }
-
-    OmegaPoint() = default;
-    
-    constexpr OmegaPoint(const OmegaPoint<I, J, K>& point) 
-        : i { point.i }, j { point.j }, k { point.k } {
-    
-    }
-
-    template<typename II, typename JJ, typename KK>
-    OmegaPoint(const OmegaPoint<II, JJ, KK>& point) 
-        : i { (int)point.i }, j { (int)point.j }, k { (int)point.k } {
-        
-    }
-
-    template<typename II, typename JJ, typename KK>
-    OmegaPoint<int, int, int>& operator=(const OmegaPoint<II, JJ, KK>& point) {
-        i = (int)point.i;
-        j = (int)point.j;
-        k = (int)point.k;
-
-        return *this;
-    }
-};
-
-template<typename I, typename J, typename K>
-inline std::ostream& operator<<(std::ostream& out, const OmegaPoint<I, J, K>& point) {
-    out << "(" << std::to_string(point.i) << ", " << std::to_string(point.j) << ", " << std::to_string(point.k) << ")";
-    return out;
-}
-
-
-template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-inline bool operator==(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
-    return x.i != y.i ? false : x.j != y.j ? false : x.k != y.k ? false : true; // most readable code oat
-}
-
-template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-inline bool operator!=(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
-    return !(x == y);
-}
-
-struct CartesianPoint {
-    double x {};
-    double y {};
-
-    CartesianPoint (double x, double y) 
-        : x { x }, y { y } {
-        
-    }
-};
-
-inline std::ostream& operator<<(std::ostream& out, const CartesianPoint& point) {
-    out << "(" << std::to_string(point.x) << ", " << std::to_string(point.y) << ")";
-    return out;
-}
 
 class Omega {
     /*
@@ -129,23 +65,25 @@ class Omega {
         return 'a';
     }
 
-    char sameTypeA(const std::string& region, const int rsum, const double signedJ, const double signedK) const {
-        if (region == "1-1-1") {
-            if (rsum == -1) return 'A';
-            if (rsum == 0) return signedJ <= signedK ? 'B' : 'C';
-            if (rsum == -2) return signedJ >= signedK ? 'B' : 'C';
-        }
-
-        else if (region == "-111") {
-            if (rsum == 1) return 'A';
-            if (rsum == 0) return signedJ >= signedK ? 'B' : 'C';
-            if (rsum == 2) return signedJ <= signedK ? 'B' : 'C';
-        }
-
-        else {
-            if (rsum == 0) return 'A';
-            if (rsum == 1) return signedJ <= signedK ? 'B' : 'C';
-            if (rsum == -1) return signedJ >= signedK ? 'B' : 'C';
+    char sameTypeA(const rgn& region, const int rsum, const double signedJ, const double signedK) const {
+        switch (region) {
+            case (rgn::pmm): {
+                if (rsum == -1) return 'A';
+                if (rsum == 0) return signedJ <= signedK ? 'B' : 'C';
+                if (rsum == -2) return signedJ >= signedK ? 'B' : 'C';
+            }
+            
+            case (rgn::mpp): {
+                if (rsum == 1) return 'A';
+                if (rsum == 0) return signedJ >= signedK ? 'B' : 'C';
+                if (rsum == 2) return signedJ <= signedK ? 'B' : 'C';
+            }
+            
+            default: {
+                if (rsum == 0) return 'A';
+                if (rsum == 1) return signedJ <= signedK ? 'B' : 'C';
+                if (rsum == -1) return signedJ >= signedK ? 'B' : 'C';
+            }
         }
         
         // I return A here because the given procedure does not succeed for only integer component vectors (lol),
@@ -155,48 +93,52 @@ class Omega {
         return 'A';
     }
 
-    char sameTypeB(const std::string& region, const int rsum, const double signedI, const double signedK) const {
-        if (region == "-11-1") {
-            if (rsum == -1) return 'B';
-            if (rsum == 0) return signedI <= signedK ? 'A' : 'C';
-            if (rsum == 2) return signedI >= signedK ? 'A' : 'C';
-        }
+    char sameTypeB(const rgn& region, const int rsum, const double signedI, const double signedK) const {
+        switch (region) {
+            case (rgn::mpm): {
+                if (rsum == -1) return 'B';
+                if (rsum == 0) return signedI <= signedK ? 'A' : 'C';
+                if (rsum == 2) return signedI >= signedK ? 'A' : 'C';
+            }
 
-        else if (region == "1-11") {
-            if (rsum == 1) return 'B';
-            if (rsum == 0) return signedI >= signedK ? 'A' : 'C';
-            if (rsum == 2) return signedI <= signedK ? 'A' : 'C';
-        }
+            case (rgn::pmp): {
+                if (rsum == 1) return 'B';
+                if (rsum == 0) return signedI >= signedK ? 'A' : 'C';
+                if (rsum == 2) return signedI <= signedK ? 'A' : 'C';
+            }
 
-        else {
-            if (rsum == 0) return 'B';
-            if (rsum == 1) return signedI <= signedK ? 'A' : 'C';
-            if (rsum == -1) return signedI >= signedK ? 'A' : 'C';
+            default: {
+                if (rsum == 0) return 'B';
+                if (rsum == 1) return signedI <= signedK ? 'A' : 'C';
+                if (rsum == -1) return signedI >= signedK ? 'A' : 'C';
+            }
         }
 
         // Similar reason to sameTypeA
         return 'B';
     }
 
-    char sameTypeC(const std::string& region, const int rsum, const double signedI, const double signedJ) const {
-        if (region == "11-1") {
-            if (rsum == 1) return 'C';
-            if (rsum == 0) return signedI >= signedJ ? 'A' : 'B';
-            if (rsum == 2) return signedI <= signedJ ? 'A' : 'B';
+    char sameTypeC(const rgn& region, const int rsum, const double signedI, const double signedJ) const {
+        switch (region) {
+            case (rgn::ppm): {
+                if (rsum == 1) return 'C';
+                if (rsum == 0) return signedI >= signedJ ? 'A' : 'B';
+                if (rsum == 2) return signedI <= signedJ ? 'A' : 'B';
+            }
+
+            case (rgn::mmp): {
+                if (rsum == -1) return 'C';
+                if (rsum == 0) return signedI <= signedJ ? 'A' : 'B';
+                if (rsum == -2) return signedI >= signedJ ? 'A' : 'B';
+            }
+
+            default: {
+                if (rsum == 0) return 'C';
+                if (rsum == 1) return signedI <= signedJ ? 'A' : 'B';
+                if (rsum == -1) return signedI >= signedJ ? 'A' : 'B';
+            }
         }
 
-        else if (region == "-1-11") {
-            if (rsum == -1) return 'C';
-            if (rsum == 0) return signedI <= signedJ ? 'A' : 'B';
-            if (rsum == -2) return signedI >= signedJ ? 'A' : 'B';
-        }
-
-        else {
-            if (rsum == 0) return 'C';
-            if (rsum == 1) return signedI <= signedJ ? 'A' : 'B';
-            if (rsum == -1) return signedI >= signedJ ? 'A' : 'B';
-        }
-        
         // I return 'a' here because it indicates "error" in my switch statement; I do not return 'C' because, as I understand 
         // my code, this return should never happen. Thus, if it does, I think it better to investigate why rather than just 
         // return 'C' now.
@@ -213,8 +155,8 @@ class Omega {
         return maximum == signedI ? 'A' : maximum == signedJ ? 'B' : 'C';
     }
 
-    char differentType(const std::string& region, const int rsum, const double signedI, const double signedJ, const double signedK) const {
-        const std::array<std::string, 3> regions { "1-11", "11-1", "-111" };
+    char differentType(const rgn& region, const int rsum, const double signedI, const double signedJ, const double signedK) const {
+        const std::array<rgn, 3> regions { rgn::pmp, rgn::ppm, rgn::mpp };
         if (std::find(regions.begin(), regions.end(), region) != regions.end()) {
             if (rsum == 0) return maxRegion(signedI, signedJ, signedK);
             if (rsum == 1) return minRegion(signedI, signedJ, signedK);
@@ -234,7 +176,7 @@ class Omega {
         double signedI { signedFractionalPart(s.i) };
         double signedJ { signedFractionalPart(s.j) };
         double signedK { signedFractionalPart(s.k) };
-        std::string region { getRegion(s) };
+        rgn region { getRegion(s) };
 
         if (xtype != ytype) return differentType(region, rsum, signedI, signedJ, signedK);
 
@@ -304,9 +246,26 @@ public:
     }
 
     template<typename I, typename J, typename K>
-    std::string getRegion(const OmegaPoint<I, J, K>& s) const {
+    rgn getRegion(const OmegaPoint<I, J, K>& s) const {
         double sum { componentSum(s) };
-        return std::to_string(regionSign(s.i, sum)) + std::to_string(regionSign(s.j, sum)) + std::to_string(regionSign(s.k, sum));
+        int iSign { regionSign(s.i, sum) };
+        int jSign { regionSign(s.j, sum) };
+        int kSign { regionSign(s.k, sum) };
+
+        switch (iSign + jSign + kSign) {
+            case (3): 
+                return rgn::ppp;
+            case (1): {
+                if (iSign == -1) return rgn::mpp;
+                if (jSign == -1) return rgn::pmp;
+                return rgn::ppm;
+            }
+            default: {
+                if (iSign == 1) return rgn::pmm;
+                if (jSign == 1) return rgn::mpm;
+                return rgn::mmp;
+            }
+        }
     }
 
     template <typename I, typename J, typename K>
@@ -447,6 +406,11 @@ public:
 template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
 inline OmegaPoint<double, double, double> operator+(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
     Omega cord; // this sucks but its my fault !
+    return cord.vectorAddition(x, y);
+}
+
+inline OmegaPoint<int, int, int> operator+(const OmegaPoint<int, int, int>& x, const OmegaPoint<int, int, int>& y) {
+    Omega cord;
     return cord.vectorAddition(x, y);
 }
 

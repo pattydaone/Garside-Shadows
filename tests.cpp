@@ -7,6 +7,52 @@
 using OmegaInt = OmegaPoint<int, int, int>;
 using DecompArray = std::array<OmegaInt, 2>;
 
+inline std::ostream& operator<<(std::ostream& out, rgn region) {
+    switch (region) {
+        case (rgn::mmp): {
+            out << "(-, -, +)";
+            return out;
+        }
+
+        case (rgn::mpm): {
+            out << "(-, +, -)";
+            return out;
+        }
+
+        case (rgn::mpp): {
+            out << "(-, +, +)";
+            return out;
+        }
+
+        case (rgn::pmm): {
+            out << "(+, -, -)";
+            return out;
+        }
+
+        case (rgn::pmp): {
+            out << "(+, -, +)";
+            return out;
+        }
+
+        case (rgn::ppm): {
+            out << "(+, +, -)";
+            return out;
+        }
+        
+        case (rgn::ppp): {
+            out << "(+, +, +)";
+            return out;
+        }
+
+        default: {
+            out << "erm what the flip";
+            return out;
+        }
+    }
+}
+
+constexpr Omega testingCord;
+
 const std::array<OmegaInt, 36> comprehensiveTestingPointsArray {{
         {4, -3, 0}, {3, -4, 0}, {3, -3, 1}, {2, -4, 1}, {2, -3, 2},
         {1, -4, 2}, {1, -3, 3}, {0, -4, 3}, {0, -3, 4}, {-1, -3, 3},
@@ -148,10 +194,20 @@ void joinTests() {
 void joinTestsProblemPoints() {
     ShadowGenerator generator;
     std::vector<OmegaInt> problemPoints{{
-            {0, 2, -3}, {2, -1, -2}
+        {3, -1, -1}, {3, -3, -1}
     }};
 
     generator.toJoin = problemPoints;
+
+    while ((generator.toJoin).size() != 0) {
+        generator.joinOperation();
+    }
+
+    std::vector<OmegaInt> problemPointsTwo{{
+       {3, -3, -1}, {3, -1, -1}
+    }};
+
+    generator.toJoin = problemPointsTwo;
 
     while ((generator.toJoin).size() != 0) {
         generator.joinOperation();
