@@ -194,20 +194,10 @@ void joinTests() {
 void joinTestsProblemPoints() {
     ShadowGenerator generator;
     std::vector<OmegaInt> problemPoints{{
-        {3, -1, -1}, {3, -3, -1}
+        {-2, 2, 1}, {0, 2, -3}
     }};
 
     generator.toJoin = problemPoints;
-
-    while ((generator.toJoin).size() != 0) {
-        generator.joinOperation();
-    }
-
-    std::vector<OmegaInt> problemPointsTwo{{
-       {3, -3, -1}, {3, -1, -1}
-    }};
-
-    generator.toJoin = problemPointsTwo;
 
     while ((generator.toJoin).size() != 0) {
         generator.joinOperation();

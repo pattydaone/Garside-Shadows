@@ -125,8 +125,8 @@ class ShadowGenerator {
         }
     }
 
-    const OmegaInt& max(const OmegaInt& x, const OmegaInt& y) {
-        return cord.magnitude(x) >= cord.magnitude(y) ? x : y;
+    const OmegaInt* max(const OmegaInt* x, const OmegaInt* y) {
+        return cord.magnitude(*x) >= cord.magnitude(*y) ? x : y;
     }
 
     bool directionalCompatible(const OmegaInt& first, const OmegaInt& second) {
@@ -177,16 +177,26 @@ class ShadowGenerator {
                     [this, &secondPossibleX](auto&& y) { return getDirection(secondPossibleX + translation) == getDirection(y + translation); });
         }*/
 
+        const OmegaInt* firstFinal {};
+        const OmegaInt* secondFinal {};
 
         if (firstPossibleY == yArr.end()) {
-            return firstPossibleX + max(*secondPossibleX, *secondPossibleY) + translation;
+            firstFinal = &firstPossibleX;
+        }
+
+        else {
+            firstFinal = max(&firstPossibleX, firstPossibleY);
         }
 
         if (secondPossibleX == xArr.end()) {
-            return max(firstPossibleX, *firstPossibleY) + *secondPossibleY + translation;
+            secondFinal = secondPossibleY;
         }
 
-        return max(firstPossibleX, *firstPossibleY) + max(*secondPossibleX, *secondPossibleY) + translation;
+        else {
+            secondFinal = max(secondPossibleX, secondPossibleY);
+        }
+
+        return *firstFinal + *secondFinal + translation;
     }
 
     void checkOvershooting(OmegaInt& estimate) {
@@ -254,7 +264,11 @@ class ShadowGenerator {
                 checkOvershooting(possibleJoinPoint);
             }
 
-            std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint << '\n' << '\n';
+            if (cord.componentSum(possibleJoinPoint) == 0) {
+                std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint << '\n' << '\n';
+            }
+
+            // std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint << '\n' << '\n';
         }
     }
 
