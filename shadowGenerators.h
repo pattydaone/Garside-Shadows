@@ -11,7 +11,7 @@
 #include "constants.h"
 #include "groups.h"
 
-using OmegaInt = OmegaPoint<int, int, int>;
+using OmegaInt = OmegaInt;
 using DecompArray = std::array<OmegaInt, 2>;
 
 class ShadowGenerator {
@@ -27,7 +27,10 @@ class ShadowGenerator {
     }};
     std::vector<OmegaInt> toReflect;
 
-    std::unordered_map<std::string_view, std::string_view> reflectionsByRegion;
+    std::unordered_map<rgn, std::string_view> reflectionsByRegion;
+    char constA;
+    char constB;
+    char constC;
 
     std::array<rgn, 3> focusPointAccessRegions {};
     std::array<rgn, 3> iAccessRegions {};
@@ -41,6 +44,10 @@ class ShadowGenerator {
         LU,
         RU
     };
+
+    bool isInShadow(const OmegaInt& point) {
+        return std::find(shadowAsPoints.begin(), shadowAsPoints.end(), point) != shadowAsPoints.end();
+    }
 
     void getAccessibleRegions(std::array<rgn, 3>& arr, const DecompArray& decomp, const OmegaInt& point) {
         rgn pointRegion { cord.getRegion(point) };
@@ -166,17 +173,6 @@ class ShadowGenerator {
             secondPossibleX = std::find_if(xArr.begin(), xArr.end(), [this, &secondPossibleY](auto&& x) { return directionalCompatible(*secondPossibleY, x); });
         }
 
-        /*
-        if (secondPossibleX == nullPoint) {
-            secondPossibleY = std::find_if_not(yArr.begin(), yArr.end(), 
-                    [this, &firstPossibleX](auto&& y) { return getDirection(firstPossibleX + translation) == getDirection(y + translation); });
-        }
-
-        else {
-            secondPossibleY = std::find_if(yArr.begin(), yArr.end(), 
-                    [this, &secondPossibleX](auto&& y) { return getDirection(secondPossibleX + translation) == getDirection(y + translation); });
-        }*/
-
         const OmegaInt* firstFinal {};
         const OmegaInt* secondFinal {};
 
@@ -247,6 +243,42 @@ class ShadowGenerator {
         }
     }
 
+    void checkSides(OmegaInt& estimate) {
+        switch (cord.getRegion(estimate)) {
+            case (rgn::pmp): {
+                ++estimate.j;
+                break;
+            }
+
+            case (rgn::ppm): {
+                ++estimate.k;
+                break;
+            }
+
+            case (rgn::mpp): {
+                ++estimate.i;
+                break;
+            }
+
+            case (rgn::pmm): {
+                ++estimate.i;
+                break;
+            }
+
+            case (rgn::mpm): {
+                ++estimate.j;
+                break;
+            }
+
+            case (rgn::mmp): {
+                ++estimate.k;
+                break;
+            }
+
+            default: throw(-1);
+        }
+    }
+
     void joinOperation() {
         auto focusPoint { toJoin.back() };
         toJoin.pop_back();
@@ -259,47 +291,120 @@ class ShadowGenerator {
             if (!joinCompatible(focusPointAccessRegions, iAccessRegions)) continue;
 
             auto possibleJoinPoint { estimatePoint(decomposedFocus, decomposedI) };
-           
-            if (possibleJoinPoint != i && possibleJoinPoint != focusPoint) {
-                checkOvershooting(possibleJoinPoint);
-            }
 
             if (cord.componentSum(possibleJoinPoint) == 0) {
-                std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint << '\n' << '\n';
+                checkSides(possibleJoinPoint);
             }
 
-            // std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint << '\n' << '\n';
+            if (possibleJoinPoint == i || possibleJoinPoint == focusPoint) continue;
+
+            checkOvershooting(possibleJoinPoint);
+
+            std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint << '\n' << '\n';
+
+            if (!isInShadow(possibleJoinPoint)) {
+                shadowAsPoints.push_back(possibleJoinPoint);
+                toReflect.push_back(possibleJoinPoint);
+                toJoin.push_back(possibleJoinPoint); // ?
+            }
         }
     }
 
-    void reflection() {
+    const OmegaInt reflectA(const OmegaInt& point) {
+        OmegaInt toReturn { -1*point.i, -1*point.k, -1*point.j };
+
+        return toReturn;
+    }
+
+    const OmegaInt reflectB(const OmegaInt& point) {
+        OmegaInt toReturn { -1*point.k, -1*point.j, -1*point.i };
+
+        ++toReturn.i;
+        ++toReturn.k;
+        toReturn.j -=2;
+
+        return toReturn;
+    }
+
+    const OmegaInt reflectC(const OmegaInt& point) {
+        OmegaInt toReturn { -1*point.j, -1*point.i, -1*point.k };
+
+        return toReturn;
+    }
+
+    const OmegaInt reflection(const OmegaInt& point, const char plane) {
+        switch (plane) {
+            case ('A'): {
+                return reflectA(point);
+            }
+
+            case ('B'): {
+                return reflectB(point);
+            }
+
+            case ('C'): {
+                return reflectC(point);
+            }
+
+            default: throw(-1);
+        }
+    }
+
+    void reflectionOperation() {
         auto focusPoint { toReflect.back() };
         toReflect.pop_back();
         rgn region { cord.getRegion(focusPoint) };
-        
+        std::string_view& reflections { reflectionsByRegion[region] };
+
+        for (auto i : reflections) {
+            OmegaInt reflected { reflection(focusPoint, i) };
+            if (!isInShadow(reflected)) {
+                shadowAsPoints.push_back(reflected);
+                toReflect.push_back(reflected);
+                toJoin.push_back(reflected);
+            }
+        }
     }
 
 public:
     ShadowGenerator() 
-        : reflectionsByRegion { {"1-11", "s"}, {"-11-1", "ut"}, {"-111", "u"},
-                                {"11-1", "t"}, {"-1-11", "su"}, {"1-1-1", "st"} } {
+        : reflectionsByRegion { {rgn::pmp, "B"}, {rgn::mpm, "AC"}, {rgn::mpp, "A"},
+                                {rgn::ppm, "C"}, {rgn::mmp, "AB"}, {rgn::pmm, "BC"} }
+        , constA {'u'}
+        , constB {'s'}
+        , constC {'t'} {
         
         }
 
+    // TODO: fix this
     ShadowGenerator(const std::unordered_map<char, char>& userDefinedGeneratorRegions) 
         : group { userDefinedGeneratorRegions }
-        , reflectionsByRegion { {"1-11", std::to_string(userDefinedGeneratorRegions.at('B'))}, 
-                                {"-11-1", std::to_string(userDefinedGeneratorRegions.at('C')) + userDefinedGeneratorRegions.at('A')},
-                                {"-111", std::to_string(userDefinedGeneratorRegions.at('A'))},
-                                {"11-1", std::to_string(userDefinedGeneratorRegions.at('C'))},
-                                {"-1-11", std::to_string(userDefinedGeneratorRegions.at('B')) + userDefinedGeneratorRegions.at('A')},
-                                {"1-1-1", std::to_string(userDefinedGeneratorRegions.at('B')) + userDefinedGeneratorRegions.at('C')} } {
+        , reflectionsByRegion { {rgn::pmp, std::to_string(userDefinedGeneratorRegions.at('B'))}, 
+                                {rgn::mpm, std::to_string(userDefinedGeneratorRegions.at('C')) + userDefinedGeneratorRegions.at('A')},
+                                {rgn::mpp, std::to_string(userDefinedGeneratorRegions.at('A'))},
+                                {rgn::ppm, std::to_string(userDefinedGeneratorRegions.at('C'))},
+                                {rgn::mmp, std::to_string(userDefinedGeneratorRegions.at('B')) + userDefinedGeneratorRegions.at('A')},
+                                {rgn::pmm, std::to_string(userDefinedGeneratorRegions.at('B')) + userDefinedGeneratorRegions.at('C')} }
+        , constA { userDefinedGeneratorRegions.at('A') }
+        , constB { userDefinedGeneratorRegions.at('B') }
+        , constC { userDefinedGeneratorRegions.at('C') } {
         
     }
 
     friend void joinTests();
 
     friend void joinTestsProblemPoints();
+
+    friend void firstReflectionTests();
+
+    friend void shadowGenerationTests();
+
+    void generateShadow() {
+        while (toJoin.size() != 0 && toReflect.size() != 0) {
+            joinOperation();
+            reflectionOperation();
+        }
+    }
 };
 
 #endif

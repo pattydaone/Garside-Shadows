@@ -19,6 +19,6 @@ using DecompArray = std::array<OmegaInt, 2>;
 
 
 int main() {
-    joinTests(); // checked up through (-2, 3, 0)
+    shadowGenerationTests();
     return 0;
 }

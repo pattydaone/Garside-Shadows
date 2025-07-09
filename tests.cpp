@@ -203,3 +203,20 @@ void joinTestsProblemPoints() {
         generator.joinOperation();
     }
 }
+
+void firstReflectionTests() {
+    ShadowGenerator generator;
+    for (auto i : comprehensiveTestingPointsArray) {
+        OmegaInt point { generator.reflectB(i) };
+        std::cout << "Reflection of point " << i << " across hyperplane embedded in B: " << point << '\n' << '\n';
+    }
+}
+
+void shadowGenerationTests() {
+    ShadowGenerator generator;
+    generator.generateShadow();
+    
+    for (auto i : generator.shadowAsPoints) {
+        std::cout << i << '\n';
+    }
+}
