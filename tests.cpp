@@ -218,6 +218,8 @@ void shadowGenerationTests(const std::vector<OmegaInt>& points) {
     generator.addPoints(points);
     generator.generateShadow();
 
+    std::cout << "Size of shadow: " << generator.shadowAsPoints.size() << '\n';
+
     for (auto i : generator.shadowAsPoints) {
         std::cout << i << '\n';
     }

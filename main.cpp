@@ -22,6 +22,10 @@ int main() {
     std::vector<OmegaInt> points {{
         { 2, -2, 1 }, { -1, 0, 2 }, { 1, 1, -1 }
     }};
-    shadowGenerationTests(points);
+    
+    std::vector<OmegaInt> pointsTwo {{
+        { -1, 3, -1 }
+    }};
+    shadowGenerationTests(pointsTwo);
     return 0;
 }

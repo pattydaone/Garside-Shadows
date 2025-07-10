@@ -18,7 +18,7 @@ class ShadowGenerator {
     const Omega cord;
     const OmegaInt identity { 0, -1, 0 };
     A2Tilde group {};
-    std::vector<std::string_view> shadowAsWords;
+    std::vector<std::string> shadowAsWords;
     std::vector<OmegaInt> shadowAsPoints{{
             { 0, -1, 0 }, { 1, -1, 1 }, { 0, 0, 1 }, { 1, 0, 0 }
     }};
@@ -45,6 +45,9 @@ class ShadowGenerator {
         LU,
         RU
     };
+
+    std::array<dir, 2> firstDirArr {};
+    std::array<dir, 2> secondDirArr {};
 
     bool isInShadow(const OmegaInt& point) {
         return std::find(shadowAsPoints.begin(), shadowAsPoints.end(), point) != shadowAsPoints.end();
@@ -122,18 +125,33 @@ class ShadowGenerator {
         return false;
     }
 
-    dir getDirection(const OmegaInt& x) {
+    void getDirection(const OmegaInt& x, std::array<dir, 2>& dirArr) {
+        dirArr[1] = dir::N;
         switch (cord.getRegion(x)) {
-            case (rgn::mmp): return dir::L;
-            case (rgn::pmm): return dir::R;
-            case (rgn::mpp): return dir::LD;
-            case (rgn::ppm): return dir::RD;
+            case (rgn::mmp): dirArr[0] = dir::L; break;
+            case (rgn::pmm): dirArr[0] = dir::R; break;
+            case (rgn::mpp): dirArr[0] = dir::LD; break;
+            case (rgn::ppm): dirArr[0] = dir::RD; break;
             case (rgn::pmp): {
-                if (x.i > x.k ) return dir::RU;
-                else if (x.i < x.k) return dir::LU;
-                else return dir::N;
+                if (x.i > x.k ) dirArr[0] = dir::RU;
+                else if (x.i < x.k) dirArr[0] = dir::LU;
+                else if (x != translation) {
+                    dirArr[0] = dir::RU;
+                    dirArr[1] = dir::LU;
+                }
+                else dirArr[0] = dir::N;
+
+                break;
             }
             default: throw(-1);
+        }
+
+        if (x == OmegaInt{0, 0, 1}) {
+            dirArr[1] = dir::LD;
+        }
+
+        else if (x == OmegaInt{1, 0, 0}) {
+            dirArr[1] = dir::RD;
         }
     }
 
@@ -142,20 +160,16 @@ class ShadowGenerator {
     }
 
     bool directionalCompatible(const OmegaInt& first, const OmegaInt& second) {
-        dir firstDirection { getDirection(first + translation) };
-        dir secondDirection { getDirection(second + translation) };
+        getDirection(first + translation, firstDirArr);
+        getDirection(second + translation, secondDirArr);
 
-        if (firstDirection != dir::N && secondDirection != dir::N) return firstDirection == secondDirection;
+        for (auto i : firstDirArr) {
+            if (i == dir::N) continue;
 
-        if (firstDirection == dir::N && first != nullPoint) {
-            return secondDirection == dir::LU || secondDirection == dir::RU;
+            if (std::find(secondDirArr.begin(), secondDirArr.end(), i) != secondDirArr.end()) return true;
         }
 
-        if (secondDirection == dir::N && second != nullPoint) {
-            return firstDirection == dir::LU || firstDirection == dir::RU;
-        }
-
-        return firstDirection == secondDirection;
+        return false;
     }
 
     OmegaInt estimatePoint(const DecompArray& xArr, const DecompArray& yArr) {
@@ -328,6 +342,9 @@ class ShadowGenerator {
                 // toReflect.push_back(possibleJoinPoint);
                 // toJoin.push_back(possibleJoinPoint); // ?
             }
+            if (possibleJoinPoint == OmegaInt{-1, -2, 2} || possibleJoinPoint == OmegaInt{2, -2, -1}) {
+                continue;
+            }
         }
 
     }
@@ -376,7 +393,12 @@ class ShadowGenerator {
         auto focusPoint { toReflect.back() };
         toReflect.pop_back();
         rgn region { cord.getRegion(focusPoint) };
-        std::string_view& reflections { reflectionsByRegion[region] };
+        std::string_view reflections { reflectionsByRegion[region] };
+        if ((focusPoint.j == 0 && cord.componentSum(focusPoint) == 1) || (focusPoint.j == -1 && cord.componentSum(focusPoint) == -1)) {
+            if (region == rgn::pmm) reflections = "C";
+            else if (region == rgn::mmp) reflections = "A";
+            else throw(-1);
+        }
 
         for (auto i : reflections) {
             OmegaInt reflected { reflection(focusPoint, i) };
@@ -384,6 +406,9 @@ class ShadowGenerator {
                 toMerge.push_back(reflected);
                 // toReflect.push_back(reflected);
                 // toJoin.push_back(reflected);
+            }
+            if (reflected == OmegaInt{-1, -2, 2} || reflected == OmegaInt{2, -2, -1}) {
+                continue;
             }
         }
     }
@@ -420,6 +445,18 @@ public:
     friend void firstReflectionTests();
 
     friend void shadowGenerationTests(const std::vector<OmegaInt>& points);
+
+    const std::vector<OmegaInt>& getShadowAsPoints() {
+        return shadowAsPoints;
+    }
+
+    const std::vector<std::string>& getShadowAsWords() {
+        shadowAsWords.reserve(shadowAsPoints.size());
+        for (auto i : shadowAsPoints) {
+            shadowAsWords.push_back(group.omegaPointToWord(i));
+        }
+        return shadowAsWords;
+    }
 
     void addPoints(const std::vector<OmegaInt>& points) {
         shadowAsPoints.insert(shadowAsPoints.end(), points.begin(), points.end());
