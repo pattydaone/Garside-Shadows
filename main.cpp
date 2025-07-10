@@ -19,6 +19,9 @@ using DecompArray = std::array<OmegaInt, 2>;
 
 
 int main() {
-    shadowGenerationTests();
+    std::vector<OmegaInt> points {{
+        { 2, -2, 1 }, { -1, 0, 2 }, { 1, 1, -1 }
+    }};
+    shadowGenerationTests(points);
     return 0;
 }

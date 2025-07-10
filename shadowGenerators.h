@@ -22,10 +22,11 @@ class ShadowGenerator {
     std::vector<OmegaInt> shadowAsPoints{{
             { 0, -1, 0 }, { 1, -1, 1 }, { 0, 0, 1 }, { 1, 0, 0 }
     }};
+    std::vector<OmegaInt> toMerge {};
     std::vector<OmegaInt> toJoin {{
             { 1, -1, 1}, { 0, 0, 1 }, { 1, 0, 0 }
     }};
-    std::vector<OmegaInt> toReflect;
+    std::vector<OmegaInt> toReflect {};
 
     std::unordered_map<rgn, std::string_view> reflectionsByRegion;
     char constA;
@@ -47,6 +48,10 @@ class ShadowGenerator {
 
     bool isInShadow(const OmegaInt& point) {
         return std::find(shadowAsPoints.begin(), shadowAsPoints.end(), point) != shadowAsPoints.end();
+    }
+
+    bool isInMerge(const OmegaInt& point) {
+        return std::find(toMerge.begin(), toMerge.end(), point) != toMerge.end();
     }
 
     void getAccessibleRegions(std::array<rgn, 3>& arr, const DecompArray& decomp, const OmegaInt& point) {
@@ -246,6 +251,16 @@ class ShadowGenerator {
     void checkSides(OmegaInt& estimate) {
         switch (cord.getRegion(estimate)) {
             case (rgn::pmp): {
+                if (estimate.k == 0) {
+                    ++estimate.i;
+                    break;
+                }
+
+                else if (estimate.i == 0) {
+                    ++estimate.k;
+                    break;
+                }
+
                 ++estimate.j;
                 break;
             }
@@ -275,7 +290,13 @@ class ShadowGenerator {
                 break;
             }
 
+            case (rgn::ppp): {
+                ++estimate.j;
+                break;
+            }
+
             default: throw(-1);
+            
         }
     }
 
@@ -284,9 +305,9 @@ class ShadowGenerator {
         toJoin.pop_back();
         auto decomposedFocus { cord.decomposeIntVector(focusPoint) };
         getAccessibleRegions(focusPointAccessRegions, decomposedFocus, focusPoint);
-        for (auto i : toJoin) {
-            auto decomposedI { cord.decomposeIntVector(i) };
-            getAccessibleRegions(iAccessRegions, decomposedI, i);
+        for (auto i { shadowAsPoints.begin() + 1}; i != shadowAsPoints.end(); ++i) {
+            auto decomposedI { cord.decomposeIntVector(*i) };
+            getAccessibleRegions(iAccessRegions, decomposedI, *i);
 
             if (!joinCompatible(focusPointAccessRegions, iAccessRegions)) continue;
 
@@ -296,18 +317,19 @@ class ShadowGenerator {
                 checkSides(possibleJoinPoint);
             }
 
-            if (possibleJoinPoint == i || possibleJoinPoint == focusPoint) continue;
+            if (possibleJoinPoint == *i || possibleJoinPoint == focusPoint) continue;
 
             checkOvershooting(possibleJoinPoint);
 
-            std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint << '\n' << '\n';
+            // std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint << '\n' << '\n';
 
-            if (!isInShadow(possibleJoinPoint)) {
-                shadowAsPoints.push_back(possibleJoinPoint);
-                toReflect.push_back(possibleJoinPoint);
-                toJoin.push_back(possibleJoinPoint); // ?
+            if (!isInShadow(possibleJoinPoint) && !isInMerge(possibleJoinPoint)) {
+                toMerge.push_back(possibleJoinPoint);
+                // toReflect.push_back(possibleJoinPoint);
+                // toJoin.push_back(possibleJoinPoint); // ?
             }
         }
+
     }
 
     const OmegaInt reflectA(const OmegaInt& point) {
@@ -358,10 +380,10 @@ class ShadowGenerator {
 
         for (auto i : reflections) {
             OmegaInt reflected { reflection(focusPoint, i) };
-            if (!isInShadow(reflected)) {
-                shadowAsPoints.push_back(reflected);
-                toReflect.push_back(reflected);
-                toJoin.push_back(reflected);
+            if (!isInShadow(reflected) && !isInMerge(reflected)) {
+                toMerge.push_back(reflected);
+                // toReflect.push_back(reflected);
+                // toJoin.push_back(reflected);
             }
         }
     }
@@ -397,12 +419,31 @@ public:
 
     friend void firstReflectionTests();
 
-    friend void shadowGenerationTests();
+    friend void shadowGenerationTests(const std::vector<OmegaInt>& points);
+
+    void addPoints(const std::vector<OmegaInt>& points) {
+        shadowAsPoints.insert(shadowAsPoints.end(), points.begin(), points.end());
+        toJoin.insert(toJoin.end(), points.begin(), points.end());
+        toReflect.insert(toReflect.end(), points.begin(), points.end());
+    }
 
     void generateShadow() {
-        while (toJoin.size() != 0 && toReflect.size() != 0) {
-            joinOperation();
-            reflectionOperation();
+        while (toJoin.size() != 0 || toReflect.size() != 0) {
+            while (toJoin.size() != 0) {
+                joinOperation();
+            }
+            shadowAsPoints.insert(shadowAsPoints.end(), toMerge.begin(), toMerge.end());
+            toJoin.insert(toJoin.end(), toMerge.begin(), toMerge.end());
+            toReflect.insert(toReflect.end(), toMerge.begin(), toMerge.end());
+            toMerge.clear();
+            
+            while (toReflect.size() != 0) {
+                reflectionOperation();
+            }
+            shadowAsPoints.insert(shadowAsPoints.end(), toMerge.begin(), toMerge.end());
+            toJoin.insert(toJoin.end(), toMerge.begin(), toMerge.end());
+            toReflect.insert(toReflect.end(), toMerge.begin(), toMerge.end());
+            toMerge.clear();
         }
     }
 };
