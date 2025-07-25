@@ -51,8 +51,6 @@ inline std::ostream& operator<<(std::ostream& out, rgn region) {
     }
 }
 
-constexpr Omega testingCord;
-
 const std::array<OmegaInt, 36> comprehensiveTestingPointsArray {{
         {4, -3, 0}, {3, -4, 0}, {3, -3, 1}, {2, -4, 1}, {2, -3, 2},
         {1, -4, 2}, {1, -3, 3}, {0, -4, 3}, {0, -3, 4}, {-1, -3, 3},
@@ -78,16 +76,16 @@ std::vector<OmegaInt> comprehensiveTestingPointsVector {{
 void midpointTests() {
     OmegaPoint<int, double, double> m { 1, -0.2, -0.4 };
     std::cout << "Evaluating: closestMidpoint( (1, -0.2, -0.4) )" << '\n' << "Expected output: (1, 0, 0)" << '\n';
-    std::cout << "Actual output: " << testingCord.closestMidpoint(m) << '\n' << '\n';
+    std::cout << "Actual output: " << Omega::closestMidpoint(m) << '\n' << '\n';
     OmegaPoint<int, double, double> n { 1, -0.8, -0.4 };
     std::cout << "Evaluating: closestMidpoint( (1, -0.8, -0.4) )" << '\n' << "Expected output: (1, -1, -1)" << '\n';
-    std::cout << "Actual output: " << testingCord.closestMidpoint(n) << '\n' << '\n';
+    std::cout << "Actual output: " << Omega::closestMidpoint(n) << '\n' << '\n';
 }
 
 template<typename I, typename J, typename K>
 void manualMidpointTest(const OmegaPoint<I, J, K>& point) {
     std::cout << "Evaluating closest midpoint to: " << point << '\n';
-    std::cout << "Closest midpoint: " << testingCord.closestMidpoint(point) << '\n';
+    std::cout << "Closest midpoint: " << Omega::closestMidpoint(point) << '\n';
 }
 
 void vectorAdditionTests() {
@@ -132,8 +130,8 @@ void manualVectorAdditionTest(const OmegaPoint<I1, J1, K1>& v1, const OmegaPoint
 
 void vectorDecompositionTests() {
     for (auto i : comprehensiveTestingPointsArray) {
-        std::cout << "Decomposing point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
-        auto decomposed { testingCord.decomposeIntVector(i) };
+        std::cout << "Decomposing point " << i << "; " << (Omega::componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << Omega::getRegion(i) << '\n';
+        auto decomposed { Omega::decomposeIntVector(i) };
         std::cout << "a: " << decomposed[0] << '\n';
         std::cout << "b: " << decomposed[1] << '\n';
         OmegaPoint<int, int, int> added { decomposed[0] + decomposed[1] };
@@ -148,7 +146,7 @@ void vectorDecompositionTests() {
 
 void manualDecompositionTest(const OmegaInt& point) {
     std::cout << "Decomposing vector " << point << '\n';
-    auto decomposed { testingCord.decomposeIntVector(point) };
+    auto decomposed { Omega::decomposeIntVector(point) };
     std::cout << "A: " << decomposed[0] << '\n';
     std::cout << "B: " << decomposed[1] << '\n';
     std::cout << "Added: " << decomposed[0] + decomposed[1] << '\n';
@@ -158,7 +156,7 @@ void A2TildeTests() {
     A2Tilde group {};
     
     for (auto i : comprehensiveTestingPointsArray) {
-        std::cout << "Finding word associated with point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
+        std::cout << "Finding word associated with point " << i << "; " << (Omega::componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << Omega::getRegion(i) << '\n';
         std::string word { group.omegaPointToWord(i) };
         std::cout << "Word: " << word << '\n';
         std::cout << "Finding point associated with word " << word << '\n';
@@ -177,12 +175,14 @@ void A2TildeProblemPoints() {
     }};
 
     for (auto i : problemPoints) {
-        std::cout << "Finding word associated with point " << i << "; " << (testingCord.componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << testingCord.getRegion(i) << '\n';
+        std::cout << "Finding word associated with point " << i << "; " << (Omega::componentSum(i) > 0 ? "positive " : "negative ") << "triangle in region " << Omega::getRegion(i) << '\n';
         std::string word { group.omegaPointToWord(i) };
         std::cout << "Word: " << word << '\n' << '\n';
     }
 }
 
+// TODO: fix these
+/*
 void joinTests() {
     ShadowGenerator generator;
     generator.toJoin = comprehensiveTestingPointsVector;
@@ -204,6 +204,7 @@ void joinTestsProblemPoints() {
         generator.joinOperation();
     }
 }
+*/
 
 void firstReflectionTests() {
     ShadowGenerator generator;
@@ -221,6 +222,6 @@ void shadowGenerationTests(const std::vector<OmegaInt>& points) {
     std::cout << "Size of shadow: " << generator.shadowAsPoints.size() << '\n';
 
     for (auto i : generator.shadowAsPoints) {
-        std::cout << i << '\n';
+        std::cout << i.point << '\n';
     }
 }

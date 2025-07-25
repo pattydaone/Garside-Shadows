@@ -34,6 +34,14 @@ struct OmegaPoint {
 
         return *this;
     }
+
+    OmegaPoint<int, int, int>& operator=(const OmegaPoint<int, int, int>& point) {
+        i = point.i;
+        j = point.j;
+        k = point.k;
+
+        return *this;
+    }
 };
 
 template<typename I, typename J, typename K>

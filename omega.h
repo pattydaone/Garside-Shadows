@@ -18,54 +18,52 @@ class Omega {
      * Decomposition algorithm can be found on my github TODO: Add link to this
      */
 
-    const OmegaPoint<int, int, int> translation { 0, -1, 0 };
-
-    int sign(double x) const {
+    static int sign(double x) {
         if (x < 0) return -1;
         if (x > 0) return 1;
 
         return 0;
     }
 
-    int regionSign(double x, double sum) const {
+    static int regionSign(double x, double sum) {
         if (x != 0) return sign(x);
         return sum <= 0 ? 1 : -1;
     }
 
-    int integerPart(double x) const {
+    static int integerPart(double x) {
         return (int)x;
     }
 
-    double fractionalPart(double x) const {
+    static double fractionalPart(double x) {
         return x - integerPart(x);
     }
 
-    double signedFractionalPart(double x) const {
+    static double signedFractionalPart(double x) {
         return fractionalPart(x) < 0 ? fractionalPart(x) : fractionalPart(x) - 1;
     }
 
-    int absRoundingUp(double x) const {
+    static int absRoundingUp(double x) {
         return integerPart(x) + sign(fractionalPart(x));
     }
     
     template<typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-    OmegaPoint<double, double, double> directSum(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) const {
+    static OmegaPoint<double, double, double> directSum(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
         return OmegaPoint<double, double, double> { x.i + y.i, x.j + y.j, x.k + y.k };
     }
 
-    int Rsum(const OmegaPoint<double, double, double>& s) const {
+    static int Rsum(const OmegaPoint<double, double, double>& s) {
         return absRoundingUp(s.i) + absRoundingUp(s.j) + absRoundingUp(s.k);
     }
 
     template<typename I, typename J, typename K>
-    char getType(const OmegaPoint<I, J, K>& x) const {
+    static char getType(const OmegaPoint<I, J, K>& x) {
         if (typeid(x.i) == typeid(int)) return 'A';
         else if (typeid(x.j) == typeid(int)) return 'B';
         else if (typeid(x.k) == typeid(int)) return 'C';
         return 'a';
     }
 
-    char sameTypeA(const rgn& region, const int rsum, const double signedJ, const double signedK) const {
+    static char sameTypeA(const rgn& region, const int rsum, const double signedJ, const double signedK) {
         switch (region) {
             case (rgn::pmm): {
                 if (rsum == -1) return 'A';
@@ -93,7 +91,7 @@ class Omega {
         return 'A';
     }
 
-    char sameTypeB(const rgn& region, const int rsum, const double signedI, const double signedK) const {
+    static char sameTypeB(const rgn& region, const int rsum, const double signedI, const double signedK) {
         switch (region) {
             case (rgn::mpm): {
                 if (rsum == -1) return 'B';
@@ -118,7 +116,7 @@ class Omega {
         return 'B';
     }
 
-    char sameTypeC(const rgn& region, const int rsum, const double signedI, const double signedJ) const {
+    static char sameTypeC(const rgn& region, const int rsum, const double signedI, const double signedJ) {
         switch (region) {
             case (rgn::ppm): {
                 if (rsum == 1) return 'C';
@@ -145,17 +143,17 @@ class Omega {
         return 'a';
     }
 
-    char minRegion(const double signedI, const double signedJ, const double signedK) const {
+    static char minRegion(const double signedI, const double signedJ, const double signedK) {
         const double minimum { std::min({signedI, signedJ, signedK}) };
         return minimum == signedI ? 'A' : minimum == signedJ ? 'B' : 'C';
     }
 
-    char maxRegion(const double signedI, const double signedJ, const double signedK) const {
+    static char maxRegion(const double signedI, const double signedJ, const double signedK) {
         const double maximum { std::max({signedI, signedJ, signedK}) };
         return maximum == signedI ? 'A' : maximum == signedJ ? 'B' : 'C';
     }
 
-    char differentType(const rgn& region, const int rsum, const double signedI, const double signedJ, const double signedK) const {
+    static char differentType(const rgn& region, const int rsum, const double signedI, const double signedJ, const double signedK) {
         const std::array<rgn, 3> regions { rgn::pmp, rgn::ppm, rgn::mpp };
         if (std::find(regions.begin(), regions.end(), region) != regions.end()) {
             if (rsum == 0) return maxRegion(signedI, signedJ, signedK);
@@ -170,7 +168,7 @@ class Omega {
     }
 
     template<typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-    char getResultantType(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y, const OmegaPoint<double, double, double>& s, int rsum) const {
+    static char getResultantType(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y, const OmegaPoint<double, double, double>& s, int rsum) {
         char xtype { getType(x) };
         char ytype { getType(y) };
         double signedI { signedFractionalPart(s.i) };
@@ -188,38 +186,38 @@ class Omega {
         return 'a';
     }
 
-    void aboveRight(OmegaPoint<int, int, int>& vec) const {
+    static void aboveRight(OmegaPoint<int, int, int>& vec) {
         while (vec.i != 0 && vec.j != 0 && vec.k != 0) {
             --vec.i; ++vec.j;
         }
     }
 
-    void aboveLeft(OmegaPoint<int, int, int>& vec) const {
+    static void aboveLeft(OmegaPoint<int, int, int>& vec) {
         while (vec.i != 0 && vec.j != 0 && vec.k != 0) {
             --vec.k; ++vec.j;
         }
     }
 
-    void belowRight(OmegaPoint<int, int, int>& vec) const {
+    static void belowRight(OmegaPoint<int, int, int>& vec) {
         while (vec.i != 0 && vec.j != 0 && vec.k != 0) {
             --vec.j; ++vec.k;
         }
     }
 
-    void belowLeft(OmegaPoint<int, int, int>& vec) const {
+    static void belowLeft(OmegaPoint<int, int, int>& vec) {
         while (vec.i != 0 && vec.j != 0 && vec.k != 0) {
             --vec.j; ++vec.i;
         }
     }
 
-    const std::string placementRelativeToIdentity(const OmegaPoint<int, int, int>& vec) const {
+    static const std::string placementRelativeToIdentity(const OmegaPoint<int, int, int>& vec) {
         std::string toReturn;
         vec.i > 0 ? toReturn += "R" : toReturn += "L";
         vec.j < 0 ? toReturn += "A" : toReturn += "B";
         return toReturn;
     }
 
-    std::array<OmegaPoint<int, int, int>, 2> primaryDecomposeAlgorithm(OmegaPoint<int, int, int>& vecFromOrigin) const {
+    static std::array<OmegaPoint<int, int, int>, 2> primaryDecomposeAlgorithm(OmegaPoint<int, int, int>& vecFromOrigin) {
         OmegaPoint<int, int, int> a { vecFromOrigin };
         const std::string placement { placementRelativeToIdentity(a) };
         if (placement == "RA") aboveRight(a);
@@ -237,16 +235,15 @@ class Omega {
     }
 
 public:
-
-    constexpr Omega() = default;
+    Omega() = delete;
 
     template <typename I, typename J, typename K>
-    double componentSum(const OmegaPoint<I, J, K>& m) const {
+    static double componentSum(const OmegaPoint<I, J, K>& m) {
         return double(m.i + m.j + m.k);
     }
 
     template<typename I, typename J, typename K>
-    rgn getRegion(const OmegaPoint<I, J, K>& s) const {
+    static rgn getRegion(const OmegaPoint<I, J, K>& s) {
         double sum { componentSum(s) };
         int iSign { regionSign(s.i, sum) };
         int jSign { regionSign(s.j, sum) };
@@ -269,7 +266,7 @@ public:
     }
 
     template <typename I, typename J, typename K>
-    CartesianPoint omegaToCartesian(const OmegaPoint<I, J, K>& m) const {
+    static CartesianPoint omegaToCartesian(const OmegaPoint<I, J, K>& m) {
         double x { 0.5 * std::sqrt(3)*(m.i - m.k ) };
         double y { 0.5 * ( m.i - 2*m.j + m.k) };
 
@@ -278,7 +275,7 @@ public:
 
     // TODO: fix this for edgepoints
     template <typename I, typename J, typename K>
-    OmegaPoint<int, int, int> closestMidpoint(const OmegaPoint<I, J, K>& m) const {
+    static OmegaPoint<int, int, int> closestMidpoint(const OmegaPoint<I, J, K>& m) {
         OmegaPoint<int, int, int> final { (int)std::ceil(m.i), (int)std::ceil(m.j), (int)std::ceil(m.k) };
         if (componentSum(m) < 0) {
             if (typeid(m.i) == typeid(double)) { --final.i; }
@@ -290,7 +287,7 @@ public:
     }
 
     template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-    OmegaPoint<double, double, double> vectorAddition(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) const {
+    static OmegaPoint<double, double, double> vectorAddition(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
         OmegaPoint<double, double, double> s { (double)(x.i + y.i), (double)(x.j + y.j), (double)(x.k + y.k) };
         int rsum { Rsum(s) };
 
@@ -340,12 +337,12 @@ public:
     }
 
     template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
-    OmegaPoint<double, double, double> vectorSubtraction(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) const {
+    static OmegaPoint<double, double, double> vectorSubtraction(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
         OmegaPoint<I2, J2, K2> yOpposite { -1*y.i, -1*y.j, -1*y.k };
         return vectorAddition(x, yOpposite);
     }
     
-    const std::array<OmegaPoint<int, int, int>, 2> decomposeIntVector(const OmegaPoint<int, int, int>& midpoint) const {
+    static const std::array<OmegaPoint<int, int, int>, 2> decomposeIntVector(const OmegaPoint<int, int, int>& midpoint) {
         if (componentSum(midpoint) != 1 && componentSum(midpoint) != -1) throw(-1);
 
         if (componentSum(midpoint) < 0) {
@@ -389,14 +386,14 @@ public:
     }
 
     template<typename I1, typename J1, typename K1, typename K2, typename J2, typename I2>
-    double dotProduct(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) const {
+    static double dotProduct(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
         CartesianPoint xCart { omegaToCartesian(x) };
         CartesianPoint yCart { omegaToCartesian(y) };
         return xCart.x*yCart.x + xCart.y*yCart.y;
     }
 
     template<typename I, typename J, typename K>
-    double magnitude(const OmegaPoint<I, J, K>& point) const {
+    static double magnitude(const OmegaPoint<I, J, K>& point) {
         const CartesianPoint cart { omegaToCartesian(point) };
         return std::hypot(cart.x, cart.y);
     }
@@ -405,19 +402,16 @@ public:
 
 template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
 inline OmegaPoint<double, double, double> operator+(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
-    Omega cord; // this sucks but its my fault !
-    return cord.vectorAddition(x, y);
+    return Omega::vectorAddition(x, y);
 }
 
 inline OmegaPoint<int, int, int> operator+(const OmegaPoint<int, int, int>& x, const OmegaPoint<int, int, int>& y) {
-    Omega cord;
-    return cord.vectorAddition(x, y);
+    return Omega::vectorAddition(x, y);
 }
 
 template <typename I1, typename J1, typename K1, typename I2, typename J2, typename K2>
 inline OmegaPoint<double, double, double> operator-(const OmegaPoint<I1, J1, K1>& x, const OmegaPoint<I2, J2, K2>& y) {
-    Omega cord;
-    return cord.vectorSubtraction(x, y);
+    return Omega::vectorSubtraction(x, y);
 }
 
 #endif

@@ -2,7 +2,7 @@
 #define SHADOWGENERATORS_H
 
 #include <algorithm>
-#include <iostream>
+#include <cstddef>
 #include <vector>
 #include <string>
 #include <string_view>
@@ -10,44 +10,31 @@
 #include "omega.h"
 #include "constants.h"
 #include "groups.h"
+#include "pointInfo.h"
 
-using OmegaInt = OmegaInt;
+using OmegaInt = OmegaPoint<int, int, int>;
 using DecompArray = std::array<OmegaInt, 2>;
 
 class ShadowGenerator {
-    const Omega cord;
     const OmegaInt identity { 0, -1, 0 };
     A2Tilde group {};
     std::vector<std::string> shadowAsWords;
-    std::vector<OmegaInt> shadowAsPoints{{
-            { 0, -1, 0 }, { 1, -1, 1 }, { 0, 0, 1 }, { 1, 0, 0 }
+    std::vector<PointInfo> shadowAsPoints{{
+            { 0, -1, 0, &getAccessibleRegions, &getDirection }, 
+            { 1, -1, 1, &getAccessibleRegions, &getDirection }, 
+            { 0, 0, 1, &getAccessibleRegions, &getDirection }, 
+            { 1, 0, 0, &getAccessibleRegions, &getDirection }
     }};
-    std::vector<OmegaInt> toMerge {};
-    std::vector<OmegaInt> toJoin {{
-            { 1, -1, 1}, { 0, 0, 1 }, { 1, 0, 0 }
-    }};
-    std::vector<OmegaInt> toReflect {};
+    std::vector<PointInfo> toMerge {};
+    std::vector<PointInfo*> toJoin {
+        &shadowAsPoints[1], &shadowAsPoints[2], &shadowAsPoints[3]
+    };
+    std::vector<PointInfo*> toReflect {};
 
     std::unordered_map<rgn, std::string_view> reflectionsByRegion;
     char constA;
     char constB;
     char constC;
-
-    std::array<rgn, 3> focusPointAccessRegions {};
-    std::array<rgn, 3> iAccessRegions {};
-
-    enum class dir {
-        N,
-        L,
-        R,
-        LD,
-        RD,
-        LU,
-        RU
-    };
-
-    std::array<dir, 2> firstDirArr {};
-    std::array<dir, 2> secondDirArr {};
 
     bool isInShadow(const OmegaInt& point) {
         return std::find(shadowAsPoints.begin(), shadowAsPoints.end(), point) != shadowAsPoints.end();
@@ -57,8 +44,8 @@ class ShadowGenerator {
         return std::find(toMerge.begin(), toMerge.end(), point) != toMerge.end();
     }
 
-    void getAccessibleRegions(std::array<rgn, 3>& arr, const DecompArray& decomp, const OmegaInt& point) {
-        rgn pointRegion { cord.getRegion(point) };
+    static void getAccessibleRegions(std::array<rgn, 3>& arr, const DecompArray& decomp, const OmegaInt& point) {
+        rgn pointRegion { Omega::getRegion(point) };
         arr[0] = pointRegion;
         arr[2] = rgn::null;
         if (decomp[0] != nullPoint && decomp[1] != nullPoint) {
@@ -125,9 +112,9 @@ class ShadowGenerator {
         return false;
     }
 
-    void getDirection(const OmegaInt& x, std::array<dir, 2>& dirArr) {
+    static void getDirection(const OmegaInt& x, std::array<dir, 2>& dirArr) {
         dirArr[1] = dir::N;
-        switch (cord.getRegion(x)) {
+        switch (Omega::getRegion(x)) {
             case (rgn::mmp): dirArr[0] = dir::L; break;
             case (rgn::pmm): dirArr[0] = dir::R; break;
             case (rgn::mpp): dirArr[0] = dir::LD; break;
@@ -156,13 +143,10 @@ class ShadowGenerator {
     }
 
     const OmegaInt* max(const OmegaInt* x, const OmegaInt* y) {
-        return cord.magnitude(*x) >= cord.magnitude(*y) ? x : y;
+        return Omega::magnitude(*x) >= Omega::magnitude(*y) ? x : y;
     }
 
-    bool directionalCompatible(const OmegaInt& first, const OmegaInt& second) {
-        getDirection(first + translation, firstDirArr);
-        getDirection(second + translation, secondDirArr);
-
+    bool directionalCompatible(const std::array<dir, 2>& firstDirArr, const std::array<dir, 2>& secondDirArr) {
         for (auto i : firstDirArr) {
             if (i == dir::N) continue;
 
@@ -172,87 +156,87 @@ class ShadowGenerator {
         return false;
     }
 
-    OmegaInt estimatePoint(const DecompArray& xArr, const DecompArray& yArr) {
+    OmegaInt estimatePoint(const PointInfo& x, const PointInfo& y) {
         // TODO: reconsider this entire dogshit
         // i reconsidered and now its worse.
-        const OmegaInt& firstPossibleX { xArr[0] };
-        auto firstPossibleY { std::find_if(yArr.begin(), yArr.end(), [this, &firstPossibleX](auto&& y) { return directionalCompatible(firstPossibleX, y); })};
-        
-        const OmegaInt* secondPossibleY { &yArr[0] };
-        const OmegaInt* secondPossibleX {};
+        const DecompInfo& firstPossibleX { x.decomp[0] };
+        auto firstPossibleY { std::find_if(y.decomp.begin(), y.decomp.end(), [this, &x](auto&& y) { return directionalCompatible(x.decomp[0].dirs, y.dirs); })};
+
+        const DecompInfo* secondPossibleY { &y.decomp[0] };
+        const DecompInfo* secondPossibleX {};
         if (firstPossibleY == secondPossibleY) {
-            secondPossibleY = &yArr[1];
+            secondPossibleY = &y.decomp[1];
         }
 
-        if (*secondPossibleY == nullPoint) {
-            secondPossibleX = std::find_if_not(xArr.begin(), xArr.end(), [this, &firstPossibleY](auto&& x) { return directionalCompatible(*firstPossibleY, x); });
+        if ((*secondPossibleY).point == nullPoint) {
+            secondPossibleX = std::find_if_not(x.decomp.begin(), x.decomp.end(), [this, &firstPossibleY](auto&& x) { return directionalCompatible((*firstPossibleY).dirs, x.dirs); });
         }
 
         else {
-            secondPossibleX = std::find_if(xArr.begin(), xArr.end(), [this, &secondPossibleY](auto&& x) { return directionalCompatible(*secondPossibleY, x); });
+            secondPossibleX = std::find_if(x.decomp.begin(), x.decomp.end(), [this, &secondPossibleY](auto&& x) { return directionalCompatible((*secondPossibleY).dirs, x.dirs); });
         }
 
         const OmegaInt* firstFinal {};
         const OmegaInt* secondFinal {};
 
-        if (firstPossibleY == yArr.end()) {
-            firstFinal = &firstPossibleX;
+        if (firstPossibleY == y.decomp.end()) {
+            firstFinal = &firstPossibleX.point;
         }
 
         else {
-            firstFinal = max(&firstPossibleX, firstPossibleY);
+            firstFinal = max(&firstPossibleX.point, &(firstPossibleY -> point));
         }
 
-        if (secondPossibleX == xArr.end()) {
-            secondFinal = secondPossibleY;
+        if (secondPossibleX == x.decomp.end()) {
+            secondFinal = &(secondPossibleY -> point);
         }
 
         else {
-            secondFinal = max(secondPossibleX, secondPossibleY);
+            secondFinal = max(&(secondPossibleX -> point), &(secondPossibleY -> point));
         }
 
         return *firstFinal + *secondFinal + translation;
     }
 
     void checkOvershooting(OmegaInt& estimate) {
-        switch(cord.getRegion(estimate)) {
+        switch(Omega::getRegion(estimate)) {
             case (rgn::pmp): {
-                if (cord.componentSum(estimate) == 1) {
+                if (Omega::componentSum(estimate) == 1) {
                     --estimate.i; --estimate.k;
                 }
                 break;
             }
 
             case (rgn::mpp): {
-                if (cord.componentSum(estimate) == 1) {
+                if (Omega::componentSum(estimate) == 1) {
                     --estimate.j; --estimate.k;
                 }
                 break;
             }
 
             case (rgn::ppm): {
-                if (cord.componentSum(estimate) == 1) {
+                if (Omega::componentSum(estimate) == 1) {
                     --estimate.i; --estimate.j;
                 }
                 break;
             }
 
             case (rgn::mmp): {
-                if (cord.componentSum(estimate) == -1) {
+                if (Omega::componentSum(estimate) == -1) {
                     ++estimate.i; ++estimate.j;
                 }
                 break;
             }
 
             case (rgn::mpm): {
-                if (cord.componentSum(estimate) == -1) {
+                if (Omega::componentSum(estimate) == -1) {
                     ++estimate.i; ++estimate.k;
                 }
                 break;
             }
 
             case (rgn::pmm): {
-                if (cord.componentSum(estimate) == -1) {
+                if (Omega::componentSum(estimate) == -1) {
                     ++estimate.j; ++estimate.k;
                 }
                 break;
@@ -263,7 +247,7 @@ class ShadowGenerator {
     }
 
     void checkSides(OmegaInt& estimate) {
-        switch (cord.getRegion(estimate)) {
+        switch (Omega::getRegion(estimate)) {
             case (rgn::pmp): {
                 if (estimate.k == 0) {
                     ++estimate.i;
@@ -317,33 +301,21 @@ class ShadowGenerator {
     void joinOperation() {
         auto focusPoint { toJoin.back() };
         toJoin.pop_back();
-        auto decomposedFocus { cord.decomposeIntVector(focusPoint) };
-        getAccessibleRegions(focusPointAccessRegions, decomposedFocus, focusPoint);
         for (auto i { shadowAsPoints.begin() + 1}; i != shadowAsPoints.end(); ++i) {
-            auto decomposedI { cord.decomposeIntVector(*i) };
-            getAccessibleRegions(iAccessRegions, decomposedI, *i);
+            if (!joinCompatible(focusPoint -> accessibleRegions, i -> accessibleRegions)) continue;
 
-            if (!joinCompatible(focusPointAccessRegions, iAccessRegions)) continue;
+            auto possibleJoinPoint { estimatePoint(*focusPoint, *i) };
 
-            auto possibleJoinPoint { estimatePoint(decomposedFocus, decomposedI) };
-
-            if (cord.componentSum(possibleJoinPoint) == 0) {
+            if (Omega::componentSum(possibleJoinPoint) == 0) {
                 checkSides(possibleJoinPoint);
             }
 
-            if (possibleJoinPoint == *i || possibleJoinPoint == focusPoint) continue;
+            if (possibleJoinPoint == i -> point || possibleJoinPoint == focusPoint -> point) continue;
 
             checkOvershooting(possibleJoinPoint);
 
-            // std::cout << "Estimated join of " << focusPoint << " and " << i << ": " << possibleJoinPoint << '\n' << '\n';
-
             if (!isInShadow(possibleJoinPoint) && !isInMerge(possibleJoinPoint)) {
-                toMerge.push_back(possibleJoinPoint);
-                // toReflect.push_back(possibleJoinPoint);
-                // toJoin.push_back(possibleJoinPoint); // ?
-            }
-            if (possibleJoinPoint == OmegaInt{-1, -2, 2} || possibleJoinPoint == OmegaInt{2, -2, -1}) {
-                continue;
+                toMerge.push_back(PointInfo { possibleJoinPoint, &getAccessibleRegions, &getDirection });
             }
         }
 
@@ -392,22 +364,21 @@ class ShadowGenerator {
     void reflectionOperation() {
         auto focusPoint { toReflect.back() };
         toReflect.pop_back();
-        rgn region { cord.getRegion(focusPoint) };
-        std::string_view reflections { reflectionsByRegion[region] };
-        if ((focusPoint.j == 0 && cord.componentSum(focusPoint) == 1) || (focusPoint.j == -1 && cord.componentSum(focusPoint) == -1)) {
-            if (region == rgn::pmm) reflections = "C";
-            else if (region == rgn::mmp) reflections = "A";
+        std::string_view reflections { reflectionsByRegion[focusPoint -> region] };
+        if (((focusPoint -> point).j == 0 && Omega::componentSum(focusPoint -> point) == 1) || ((focusPoint -> point).j == -1 && Omega::componentSum(focusPoint -> point) == -1)) {
+            if (focusPoint -> region == rgn::pmm) reflections = "C";
+            else if (focusPoint -> region == rgn::mmp) reflections = "A";
             else throw(-1);
         }
 
         for (auto i : reflections) {
-            OmegaInt reflected { reflection(focusPoint, i) };
+            OmegaInt reflected { reflection(focusPoint -> point, i) };
             if (!isInShadow(reflected) && !isInMerge(reflected)) {
-                toMerge.push_back(reflected);
+                toMerge.push_back(PointInfo { reflected, &getAccessibleRegions, &getDirection });
                 // toReflect.push_back(reflected);
                 // toJoin.push_back(reflected);
             }
-            if (reflected == OmegaInt{-1, -2, 2} || reflected == OmegaInt{2, -2, -1}) {
+            if (reflected == OmegaInt{2, 0, -1}) {
                 continue;
             }
         }
@@ -446,7 +417,7 @@ public:
 
     friend void shadowGenerationTests(const std::vector<OmegaInt>& points);
 
-    const std::vector<OmegaInt>& getShadowAsPoints() {
+    const std::vector<PointInfo>& getShadowAsPoints() {
         return shadowAsPoints;
     }
 
@@ -459,27 +430,49 @@ public:
     }
 
     void addPoints(const std::vector<OmegaInt>& points) {
-        shadowAsPoints.insert(shadowAsPoints.end(), points.begin(), points.end());
-        toJoin.insert(toJoin.end(), points.begin(), points.end());
-        toReflect.insert(toReflect.end(), points.begin(), points.end());
+        std::size_t offset { shadowAsPoints.size() };
+        for (auto i : points) {
+            shadowAsPoints.push_back(PointInfo { i, &getAccessibleRegions, &getDirection });
+        }
+        for (std::size_t i = offset; i < shadowAsPoints.size(); ++i) {
+            toJoin.push_back(&shadowAsPoints[i]);
+            toReflect.push_back(&shadowAsPoints[i]);
+        }
+    }
+
+    void addPoints(const std::vector<std::string>& words) {
+        shadowAsPoints.reserve(4 + words.size());
+        for (auto i : words) {
+            OmegaInt wordAsPoint { group.wordToOmegaPoint(i) };
+            shadowAsPoints.push_back(PointInfo {wordAsPoint, &getAccessibleRegions, &getDirection});
+            toJoin.push_back(&shadowAsPoints.back());
+            toReflect.push_back(&shadowAsPoints.back());
+        }
     }
 
     void generateShadow() {
+        std::size_t offset;
         while (toJoin.size() != 0 || toReflect.size() != 0) {
             while (toJoin.size() != 0) {
                 joinOperation();
             }
+            offset = shadowAsPoints.size();
             shadowAsPoints.insert(shadowAsPoints.end(), toMerge.begin(), toMerge.end());
-            toJoin.insert(toJoin.end(), toMerge.begin(), toMerge.end());
-            toReflect.insert(toReflect.end(), toMerge.begin(), toMerge.end());
+            for (std::size_t i = offset; i < shadowAsPoints.size(); ++i) {
+                toJoin.push_back(&shadowAsPoints[i]);
+                toReflect.push_back(&shadowAsPoints[i]);
+            }
             toMerge.clear();
             
             while (toReflect.size() != 0) {
                 reflectionOperation();
             }
+            offset = shadowAsPoints.size();
             shadowAsPoints.insert(shadowAsPoints.end(), toMerge.begin(), toMerge.end());
-            toJoin.insert(toJoin.end(), toMerge.begin(), toMerge.end());
-            toReflect.insert(toReflect.end(), toMerge.begin(), toMerge.end());
+            for (std::size_t i = offset; i < shadowAsPoints.size(); ++i) {
+                toJoin.push_back(&shadowAsPoints[i]);
+                toReflect.push_back(&shadowAsPoints[i]);
+            }
             toMerge.clear();
         }
     }

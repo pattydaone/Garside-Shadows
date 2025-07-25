@@ -16,4 +16,14 @@ enum class rgn {
     ppp
 };
 
+enum class dir {
+    N,
+    L,
+    R,
+    LD,
+    RD,
+    LU,
+    RU
+};
+
 #endif

@@ -8,12 +8,12 @@
 #include <array>
 #include "omega.h"
 #include "constants.h"
+#include "pointInfo.h"
 
 using OmegaInt = OmegaPoint<int, int, int>;
 using DecompArray = std::array<OmegaInt, 2>;
 
 class A2Tilde {
-    const Omega cord {};
     const std::unordered_map<char, char> templateGeneratorRegions;
     std::unordered_map<char, char> generatorRegions;
 
@@ -27,21 +27,21 @@ class A2Tilde {
     };
 
     char moveRegionA(OmegaInt& point) {
-        if (cord.componentSum(point) > 0) { --point.j; --point.k; }
+        if (Omega::componentSum(point) > 0) { --point.j; --point.k; }
         else { ++point.j; ++point.k; }
         std::swap(generatorRegions['B'], generatorRegions['C']);
         return generatorRegions['A'];
     }
 
     char moveRegionB(OmegaInt& point) {
-        if (cord.componentSum(point) > 0) { --point.i; --point.k; }
+        if (Omega::componentSum(point) > 0) { --point.i; --point.k; }
         else { ++point.i; ++point.k; }
         std::swap(generatorRegions['A'], generatorRegions['C']);
         return generatorRegions['B'];
     }
 
     char moveRegionC(OmegaInt& point) {
-        if (cord.componentSum(point) > 0) { --point.i; --point.j; }
+        if (Omega::componentSum(point) > 0) { --point.i; --point.j; }
         else { ++point.i; ++point.j; }
         std::swap(generatorRegions['A'], generatorRegions['B']);
         return generatorRegions['C'];
@@ -59,7 +59,7 @@ class A2Tilde {
     }
 
     std::string determinePath(const OmegaInt& point) {
-        if (cord.componentSum(point) > 0) {
+        if (Omega::componentSum(point) > 0) {
             if ((point + OmegaInt{-1, 1, -1}).k == 0) return "BA";
             else return "BC";
         }
@@ -93,10 +93,10 @@ public:
         resetGeneratorRegions();
         std::string word {};
         OmegaInt start { 0, -1, 0 };
-        const rgn region { cord.getRegion(point) };
+        const rgn region { Omega::getRegion(point) };
         const auto& path { pathByRegion.at(region) };
-        auto decomposedVector { cord.decomposeIntVector(point) };
-        decomposedVector[0] = decomposedVector[0] + OmegaInt {0, -1, 0};
+        auto decomposedVector { Omega::decomposeIntVector(point) };
+        decomposedVector[0] = (decomposedVector[0] + OmegaInt {0, -1, 0});
 
         // More hacky fixing because edgecases are so fun!!!!!!!!!!!!!!!!!!!!!
         if (decomposedVector[1] == nullPoint) {
@@ -127,11 +127,47 @@ public:
         return word;
     }
 
+    std::string omegaPointToWord(const PointInfo& info) {
+        resetGeneratorRegions();
+        std::string word {};
+        OmegaInt start { 0, -1, 0 };
+        const rgn region { Omega::getRegion(info.point) };
+        const auto& path { pathByRegion.at(region) };
+        OmegaInt translatedDecomp { (info.decomp[0].point + OmegaInt {0, -1, 0}) };
+
+        if (info.decomp[1].point == nullPoint) {
+            switch (region) {
+                case (rgn::ppm): {
+                    pathFind(start, "CB", translatedDecomp, word);
+                    return word;
+                }
+                                 
+                case (rgn::mpp): {
+                    pathFind(start, "AB", translatedDecomp, word);
+                    return word;
+                }
+
+                case (rgn::pmp): {
+                    pathFind(start, determinePath(translatedDecomp), translatedDecomp, word);
+                    return word;
+                }
+
+                default: break;
+            }
+        }
+
+        pathFind(start, path[0], translatedDecomp, word);
+        pathFind(start, path[1], info.point, word);
+
+
+        return word;
+    }
+
     OmegaInt wordToOmegaPoint(const std::string_view word) {
         resetGeneratorRegions();
         OmegaInt point { 0, -1, 0 };
         for (auto i : word) {
-            auto it = std::find_if(generatorRegions.begin(), generatorRegions.end(), [&i](auto&& it) -> bool { return it.second == i; });
+            auto it { std::find_if(generatorRegions.begin(), generatorRegions.end(), [&i](auto&& it) -> bool { return it.second == i; }) };
             switch (it -> first) {
                 case 'A': { moveRegionA(point); break; }
                 case 'B': { moveRegionB(point); break; }
@@ -139,6 +175,10 @@ public:
             }
         }
         return point;
+    }
+
+    std::string reduceWord(const std::string& word) {
+        return omegaPointToWord(wordToOmegaPoint(word));
     }
 };
 
