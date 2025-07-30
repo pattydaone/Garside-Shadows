@@ -56,15 +56,15 @@ int main() {
 }
 ```
 
-Points which you want to add may be added within the `points` variable. Input points as strings and separated by commas. For example:
+Words which you want to add may be added within the `inputWords` variable. Input words as strings and separated by commas. For example:
 
 ```{cpp}
-std::vector<std::string> points {
+std::vector<std::string> inputWords {
     "stsu", "suts"
 };
 ```
 
-Points do not have to be in reduced form; however, must be generated with the following generator orientation:
+Words do not have to be in reduced form; however, must be generated with the following generator orientation:
 
 ![Generator orientation](Pictures/generator_orientation.png)
 
@@ -183,14 +183,12 @@ would like to know so I can investigate *why*. With that said: a return value of
 The second change is within the final step of the algorithm. Under section 3.2 of the above linked paper, within the table at step 3, there is the following:
 
 > (b) If ((i + j + k) > 2) Then, let r: = (i − 1, j − 1, k − 1) 
-
-   Else If ((i + j + k) < −2) Then, let r: = (i + 1, j + 1, k + 1).
+>   Else If ((i + j + k) < −2) Then, let r: = (i + 1, j + 1, k + 1).
 
 This has been edited to be inclusive:
 
 > (b) If ((i + j + k) >= 2) Then, let r: = (i − 1, j − 1, k − 1) 
-
-   Else If ((i + j + k) <= −2) Then, let r: = (i + 1, j + 1, k + 1).
+>   Else If ((i + j + k) <= −2) Then, let r: = (i + 1, j + 1, k + 1).
 
 This edit was made as a result of me finding some output vectors which summed to exactly 2 and -2. Obviously this cannot be the case, as all points' sums must be contained within the interval `[-1, 1]`. 
 I suspect sums are exactly 2 and -2 if the two input vectors are all integer vectors. I do not know this to be the case, what I do know, however, is that for all my testing, this change gives the 
@@ -246,7 +244,7 @@ if letter == 'u': navigate through the type that u is embedded in; reflect after
 
 Once the for loop is finished, you simply output the point which you navigated with.
 
-> :memo: **Note:** If you'll notice, there is nothing within this which dictates the word must be reduced. Thus, it is not difficult to see how one could leverage this functionality as a word reducer.
+> **Note:** If you'll notice, there is nothing within this which dictates the word must be reduced. Thus, it is not difficult to see how one could leverage this functionality as a word reducer.
 
 ### Shadow Generation
 
@@ -272,7 +270,7 @@ To now find the existence of a join between two points, the algorithm is as foll
 
 3. If their intersection is non-empty, the join exists; else, the join does not exist.
 
-> :memo: **Note:** This is not formally proven; this is an observation which apppears, for all intents and purposes, to be true.
+> **Note:** This is not formally proven; this is an observation which apppears, for all intents and purposes, to be true.
 
 ##### Estimation
 
@@ -303,7 +301,7 @@ or one like it be estimate as the join of two elements, both paths will pass thr
 element before the final wall will also be the join. Something to note about this element is that it appears to be pointing *towards* the identity element. What we can extrapolate from this example 
 is that the join of elements in any region must point towards the identity element -- with the exception being trivial joins.
 
-> :memo: **Note:** This last fact is important, and therefore, before we conduct overshooting tests, we must first check to ensure the join is non-trivial.
+> **Note:** This last fact is important, and therefore, before we conduct overshooting tests, we must first check to ensure the join is non-trivial.
 
 The way we check the orientation of the triangles in the coordinate system is by the component sums. In the pictured example above, we can see that the triangles in this region which will have a final 
 wall are all negative, and therefore, all non-trivial joins in this region must be positive (so their component sum must be equal to 1). 
@@ -322,19 +320,19 @@ Reflections are thankfully very easy, as the coordinate system allows them inher
 
 ##### Reflecting across the hyperplane embedded within A
 
-Given point a = (i, j, k), it's reflection across the plane embedded within type A at the identity point is r = (-1\*i, -1\*k, -1\*j)
+Given point $a = (i, j, k)$, it's reflection across the plane embedded within type A at the identity point is $r = (-1\*i, -1\*k, -1\*j)$
 
 In words, we negate every component as well as swapping the j and k components.
 
 ##### Reflecting across the hyperplane embedded within C
 
-Given point c = (i, j, k), it's reflection across the plane embedded within type C at the identity point is r = (-1\*j, -1\*i, -1\*k)
+Given point $c = (i, j, k)$, it's reflection across the plane embedded within type C at the identity point is $r = (-1\*j, -1\*i, -1\*k)$
 
 In words, we negate every component as well as swapping the i and j components.
 
 ##### Reflecting across the hyperplane embedded within B
 
-Given point b = (i, j, k), it's reflection across the plane embedded withing type B at the identity point is r = (-1\*k + 1, -1\*j - 2, -1\*i + 1)
+Given point $b = (i, j, k)$, it's reflection across the plane embedded withing type B at the identity point is $r = (-1\*k + 1, -1\*j - 2, -1\*i + 1)$
 
 In words, we negate every component, swap the i and k components, add 1 to the first and last component, and subtract 2 from the second component. 
 
