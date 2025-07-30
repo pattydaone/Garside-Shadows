@@ -183,11 +183,13 @@ would like to know so I can investigate *why*. With that said: a return value of
 The second change is within the final step of the algorithm. Under section 3.2 of the above linked paper, within the table at step 3, there is the following:
 
 > (b) If ((i + j + k) > 2) Then, let r: = (i − 1, j − 1, k − 1) 
+>
 >   Else If ((i + j + k) < −2) Then, let r: = (i + 1, j + 1, k + 1).
 
 This has been edited to be inclusive:
 
 > (b) If ((i + j + k) >= 2) Then, let r: = (i − 1, j − 1, k − 1) 
+>
 >   Else If ((i + j + k) <= −2) Then, let r: = (i + 1, j + 1, k + 1).
 
 This edit was made as a result of me finding some output vectors which summed to exactly 2 and -2. Obviously this cannot be the case, as all points' sums must be contained within the interval `[-1, 1]`. 
