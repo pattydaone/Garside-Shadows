@@ -196,6 +196,14 @@ This edit was made as a result of me finding some output vectors which summed to
 I suspect sums are exactly 2 and -2 if the two input vectors are all integer vectors. I do not know this to be the case, what I do know, however, is that for all my testing, this change gives the 
 expected sums.
 
+> **Important:** There is another issue to note. The paper also defines the "absolute rounding up" operation and offers two ways to evaluate it, claiming they are equivalent. They are not.
+>
+> Consider x = 1. By the first definition, $\text{absRoundingUp}(x) = sgn(x)\*\lfloor \abs{x}\rfloor + sgn(x - sgn(x)\*\lfloor \abs{x}\rfloor) = 1 + 0 = 1
+>
+> By the second definition, $\text{absRoundingUp}(x) = sgn(x)\*<\abs{x} + 1/2> = 1\*<3/2> = 2.
+>
+> As we can see, these definitions disagree. I implemented the former definition, as the output agrees more with what the name implies.
+
 #### Decomposition
 
 The paper above does not define decomposition, and so I had to come up with something. Please bear in mind, what follows is horrible, hacky, and just bad in ever manner imaginable. If you can think up a 
