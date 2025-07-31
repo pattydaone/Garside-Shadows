@@ -198,7 +198,7 @@ expected sums.
 
 There is another important issue to note. The paper also defines the "absolute rounding up" operation and offers two ways to evaluate it, claiming they are equivalent. They are not.
 
-onsider x = 1. By the first definition, $\text{absRoundingUp}(x) = sgn(x)\*\lfloor \|x\| \rfloor + sgn(x - sgn(x)\*\lfloor \|x\| \rfloor) = 1 + 0 = 1$
+Consider x = 1. By the first definition, $\text{absRoundingUp}(x) = sgn(x)\*\lfloor \|x\| \rfloor + sgn(x - sgn(x)\*\lfloor \|x\| \rfloor) = 1 + 0 = 1$
 
 By the second definition, $\text{absRoundingUp}(x) = sgn(x)\*<\|x\| + 1/2> = 1\*<3/2> = 2$
 
