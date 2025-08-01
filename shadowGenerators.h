@@ -159,23 +159,26 @@ class ShadowGenerator {
     OmegaInt estimatePoint(const PointInfo& x, const PointInfo& y) {
         // TODO: reconsider this entire dogshit
         // i reconsidered and now its worse.
+        // i re-reconsidered it and i think its better now smiles
+        
+        std::vector<const DecompInfo*> yChoices { &y.decomp[0], &y.decomp[1] };
+        
         const DecompInfo& firstPossibleX { x.decomp[0] };
         auto firstPossibleY { std::find_if(y.decomp.begin(), y.decomp.end(), [this, &x](auto&& y) { return directionalCompatible(x.decomp[0].dirs, y.dirs); })};
 
-        const DecompInfo* secondPossibleY { &y.decomp[0] };
-        const DecompInfo* secondPossibleX {};
-        if (firstPossibleY == secondPossibleY) {
-            secondPossibleY = &y.decomp[1];
-        }
+        const DecompInfo* secondPossibleX { &x.decomp[1] };
+        const DecompInfo* secondPossibleY {};
 
-        if ((*secondPossibleY).point == nullPoint) {
-            secondPossibleX = std::find_if_not(x.decomp.begin(), x.decomp.end(), [this, &firstPossibleY](auto&& x) { return directionalCompatible((*firstPossibleY).dirs, x.dirs); });
+        auto tempVarIdk { std::find(yChoices.begin(), yChoices.end(), firstPossibleY) };
+        if (tempVarIdk != yChoices.end()) {
+            yChoices.erase(tempVarIdk);
+            secondPossibleY = yChoices[0];
         }
 
         else {
-            secondPossibleX = std::find_if(x.decomp.begin(), x.decomp.end(), [this, &secondPossibleY](auto&& x) { return directionalCompatible((*secondPossibleY).dirs, x.dirs); });
+            secondPossibleY = std::find_if(y.decomp.begin(), y.decomp.end(), [this, &x](auto&& y) { return directionalCompatible(x.decomp[1].dirs, y.dirs); });
         }
-
+    
         const OmegaInt* firstFinal {};
         const OmegaInt* secondFinal {};
 
@@ -187,8 +190,8 @@ class ShadowGenerator {
             firstFinal = max(&firstPossibleX.point, &(firstPossibleY -> point));
         }
 
-        if (secondPossibleX == x.decomp.end()) {
-            secondFinal = &(secondPossibleY -> point);
+        if (secondPossibleY == y.decomp.end()) {
+            secondFinal = &(secondPossibleX -> point);
         }
 
         else {

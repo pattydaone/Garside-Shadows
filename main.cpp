@@ -53,14 +53,14 @@ int main() {
     ShadowGenerator gen;
 
     std::vector<OmegaInt> points {{
-    
+        { -1, 3, -1 }
     }};
 
     std::vector<std::string> inputWords {
-        "sust"
+        "stustsut"
     };
 
-    gen.addPoints(inputWords);
+    gen.addPoints(points);
     gen.generateShadow();
 
     const std::vector<PointInfo>& shadowpoints { gen.getShadowAsPoints() };

@@ -343,7 +343,9 @@ public:
     }
     
     static const std::array<OmegaPoint<int, int, int>, 2> decomposeIntVector(const OmegaPoint<int, int, int>& midpoint) {
-        if (componentSum(midpoint) != 1 && componentSum(midpoint) != -1) throw(-1);
+        if (componentSum(midpoint) != 1 && componentSum(midpoint) != -1) {
+            throw(-1);
+        }
 
         if (componentSum(midpoint) < 0) {
             OmegaPoint<int, int, int> edgePoint { vectorSubtraction(midpoint, translation) };
